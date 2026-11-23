@@ -1,0 +1,70 @@
+<!-- inventory-dashboard.html -->
+
+{% extends "base.html" %}
+
+{% block title %}🥤Inventory|Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+    table { width: 100%; border-collapse: collapse; margin-top:0; background-color:aquamarine;color:green;}
+    th, td { border: 1px solid darkred; padding: 12px; font-size:1rem; text-align: left; }
+    th { background-color: green; color: white; }
+    tr:nth-child(even) { background-color:lightcyan; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid w-100 p-0 my-4">
+
+    <h1>📋 Live Ingredient Inventory Status</h1>
+    <p>Inventory Dashboard</p>
+
+    <a class="btn button btn-success mb-4 mt-3 me-3" href="{{ url_for('display_inventory_dashboard') }}">Refresh</a>
+
+    <!-- SECURITY: AUTHORIZATION REQUIRED -->
+    {% if current_user.role == 'manager' %}
+        <!-- Only managers are allowed to update the inventory stock -->
+        <a class="btn button btn-success mb-4 mt-3" href="{{ url_for('update_inventory') }}">Update</a>
+    {% endif %}
+    
+    <table class="w-100">
+        <thead>
+            <tr>
+                <th>Ingredient Name</th>
+                <th>Ingredient Portion</th>
+                <th>Measurement Unit</th>
+                <th>Current Stock Portions</th>
+                <th>Reorder Stock Portions</th>
+                <th>Minimum Stock Portions</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            <!-- FLASK JINJA LOOP: Iterates through each item sent from Python -->
+            {% for ing in ingredients %}
+
+            {### DYNAMIC ROW HIGHLIGHTER: Applies the alert style if inventory is low ###}
+    
+            <tr {% if ing.id not in stock_exclusions %} 
+                    {% if ing.current_stock <= ing.minimum_stock %} class="out-of-stock"{% endif %}
+                    {% if ing.current_stock <= ing.reorder_stock %} class="low-stock"{% endif %}
+                {% else %}   
+                    style="background-color:lightgray; color:gray"
+                {% endif %}>
+                
+                <td><strong>{{ ing.name }}</strong></td>
+                <td>{{ ing.portion }}</td>
+                <td>{{ ing.unit_type }}</td>
+                <td>{{ ing.current_stock }}</td>
+                <td>{{ ing.reorder_stock }}</td>
+                <td>{{ ing.minimum_stock }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+ 
+

@@ -1,0 +1,73 @@
+<!-- index.html -->
+{% extends "base.html" %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<!-- Kept your exact classes, layout tags, and design styles completely intact -->
+<div class="text-center shadow-sm rounded-4 overflow-hidden">
+    <h1 class="display-6 text-success fw-semibold mt-0 mb-2">🥤Fresh & Delicious Smoothies</h1>
+    
+    <!-- Cleaned up the spacing typo to 'my-0 fs-5' and added safety max-width to keep text within card boundaries -->
+    <p class="lead mx-2 my-0 fs-5 w-100 fw-semibold text-muted fst-italic" style="text-align: center; max-width: calc(100% - 16px);">
+        Handcrafted with 100% premium original ingredients.
+    </p>
+    
+    <p class="lead mx-2 my-0 fs-5 w-100 fw-semibold text-muted fst-italic" style="text-align: center; max-width: calc(100% - 16px);">
+        Custom-tailored to power your day.
+    </p>
+</div>
+
+<div class="container mt-4">
+    <div id="mainSmoothieShowcase" 
+        class="carousel slide carousel-fade shadow rounded-4 overflow-hidden mb-5" 
+        data-bs-ride="carousel" data-bs-interval="4000">
+        <div class="carousel-indicators">
+            {% for smoothie in smoothies %}
+                <button type="button" data-bs-target="#mainSmoothieShowcase" 
+                    data-bs-slide-to="{{ loop.index0 }}" 
+                    class="{% if loop.first %}active{% endif %}">
+                </button>
+            {% endfor %}
+        </div>
+
+        <!-- The Sliding Items Container -->
+        <div class="carousel-inner" style="height: 400px;">
+            {% for smoothie in smoothies %}
+                <!-- loop.first guarantees that exactly ONE item is marked active so the engine initializes -->
+                <div class="carousel-item {% if loop.first %}active{% endif %} h-100">
+                    
+                    <!-- Dynamically grabs the single matching image file on your disk -->
+                    <!-- e.g., 'static/img/very-berry-smoothie.jpeg' -->
+                    <img src="{{ url_for('static', filename='img/' ~ smoothie.name|lower|replace(' ', '-') ~ '-smoothie.jpeg') }}" 
+                        class="d-block w-100 m-0 h-100" style="object-fit: cover; filter: brightness(0.7);" alt="{{ smoothie.name }}">
+                    
+                    <!-- Floating Descriptive Text Overlay -->
+                    <div class="carousel-caption d-none d-md-block text-start start-50 translate-middle-x w-75 pb-5">
+                        <span class="badge bg-success mb-2 px-3 py-2 rounded-pill fs-6 shadow-sm">Featured Menu Item</span>
+                        <h2 class="display-4 fw-bold text-white mb-2">{{ smoothie.name }}</h2>
+                        <p class="lead fw-bold" style="color:yellow;">
+                            Handcrafted premium blend mixed fresh and customized by you.
+                        </p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Left & Right Arrow Navigation Controls -->
+        <button class="carousel-control-prev" type="button" 
+            data-bs-target="#mainSmoothieShowcase" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" 
+            data-bs-target="#mainSmoothieShowcase" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+</div>
+
+{% endblock %}

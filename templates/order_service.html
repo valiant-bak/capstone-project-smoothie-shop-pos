@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}🥤 Production Kitchen Queue - Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<!-- Automatically auto-refresh every 15 seconds to look for newly paid orders -->
+<!-- <meta http-equiv="refresh" content="15"> -->
+{% endblock %}
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cloudflare.com">
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        
+        <!-- Main Custom Branding Matrix Container -->
+        <div class="matrix-container shadow-lg rounded-4 mb-5">
+            <div class="matrix-header row g-3" >
+                <div class="col-12 align-content-center">
+                    <h2 class="mb-0 fw-semibold text-center">🥤 Blending Smoothies...</h2>
+                    <p class="text-black fs-5 mt-2 mb-0 fw-semibold text-center"> ORDER ID: {{ order_id }}</p>
+                </div>
+            </div>
+
+            <!-- Order Body Details -->
+            <div class="p-4 container card-body bg-white">
+                <!-- Unpacking individual items -->
+                {% for item in items %}
+                    <div class="card mb-3 border-light-subtle shadow-sm p-3 bg-light position-relative">
+                        <div class="row align-items-center g-3">      
+                            <div class="col-12 col-md-8">
+                                <h5 class="text-success fw-semibold mb-3">🥤 {{ item.smoothie.name }}</h5>
+                                
+                                <!-- Modifications recap -->
+                                <div class="ps-2 border-start border-secondary-subtle">
+                                    {% for mod in item.modifications %}
+                                        <p class="text-black d-block mb-1">
+                                            {{ mod.name }}
+                                        </p>
+                                    {% else %}
+                                        <p class="text-black mb-1 fst-italic">Standard Recipe (no customizations)</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <!-- Order Action Button -->
+                <div class="card-footer bg-light border-top pb-3 pt-3">
+                    <!-- Form to clear order from kitchen queue and mark served -->
+                    <form action="{{ url_for('serve_order') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow-sm fs-5">
+                            CLICK TO SERVE SMOOTHIE ORDER
+                        </button> 
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,214 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<!-- Base Layer Structural Dependencies Reference Snippet -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}🥤Oasis Smoothie Shop{% endblock %}</title>
+
+    <!-- 1. Responsive UI Presentation Library (Bootstrap 5.3 Mobile First Grid) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <!-- 2. Custom Application Branding Matrix Styles (Overrides Bootstrap) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <!-- Additional CSS block for other HTML files -->
+    {% block extra_css %}{% endblock %}
+
+</head>
+
+<body class="d-flex flex-wrap gap-3 flex-column justify-content-center min-vh-100" style="min-width: 360px !important; overflow-x: auto;">
+
+<!-- Universal Sticky Header -->
+<!-- Main parent wraps branding layout styles cleanly with a responsive min-width constraint to protect mobile layouts -->
+<header class="navbar navbar-expand-lg sticky-top m-0 border-bottom p-3"
+        style="background: linear-gradient(135deg, #f9d423 0%, salmon 100%); min-width: 320px;">
+    
+    <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between p-0">
+        
+        <!-- Logo / Title: Perfectly anchored to the far left side -->
+        <a href="/" class="navbar-brand d-flex align-items-center text-dark text-decoration-none m-0">
+            <span class="fs-5 fw-semibold logo">🥤Oasis Smoothie Shop</span>
+        </a>
+        
+        <!-- 🍔 Hamburger Icon Button: Pushed flush against the right edge with a clean 1px border -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#oasisResponsiveNav"
+            aria-controls="oasisResponsiveNav" aria-expanded="false" aria-label="Toggle navigation" 
+            style="background-color: peachpuff !important; border: 1px solid rgba(0,0,0,0.15) !important; padding: 6px 12px; border-radius: 6px; outline: none !important; box-shadow: none !important;">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- The Responsive Collapse Wrapper Container -->
+        <!-- Stripped mt-5 and w-100 so it collapses upward to keep the nav bar incredibly thin when closed -->
+        <div class="collapse navbar-collapse text-end" id="oasisResponsiveNav">
+            <!-- ms-auto pulls links rightward on desktop, while py-2 buffers them safely when expanded on mobile -->
+
+            <ul class="navbar-nav ms-auto pe-1 py-2 py-lg-0">
+
+                <!-------------------------------------------------------------->
+                <!-- NO AUTHENTICATION REQUIRED HERE (ALL USERS ARE WELCOME)                        -->
+                <!-------------------------------------------------------------->
+                <li class="nav-item">
+                    <!-- If the current route is the 'home' function, apply the 'active' class -->
+                    <a class="nav-link {{ 'active' if request.endpoint == 'home' else '' }}"
+                        href="{{ url_for('home') }}">Oasis Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'view_menu' else '' }}"
+                        href="{{ url_for('view_menu') }}">Buy Smoothie</a>
+                </li>
+
+                <!------------------------------------------------------------------------------->
+                <!-- SECURITY: AUTHENTICATIOON (login) and AUTHORIZATION REQUIRED (rele check) -->
+                <!-- DYNAMIC LINKS BASED ON USER AUTHENTICATION AND FOLES                      -->
+                <!------------------------------------------------------------------------------->
+
+                {% if current_user.is_authenticated %}:
+
+                    <!--------------------------------------------------------------------->
+                    <!-- THE USER IS AN AUTHENTICATED EMPLOYEE (logged-in)                     -->
+                    <!--------------------------------------------------------------------->
+
+                    <!-- THE AUTHENTICATED USER CAN VIEW THE PENDING ORDERS -->
+
+                    <li class="nav-item dropdown">
+                        <!-- The main dropdown toggle button -->
+                        <a class="nav-link dropdown-toggle {{ 'active' if request.endpoint in ['view_pending_payment_orders', 'view_pending_service_orders'] else '' }}" 
+                            href="#" 
+                            id="ordersDropdown" 
+                            role="button" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                                View Pending Orders
+                        </a>
+                        
+                        <!-- The dropdown menu links -->
+                        <ul class="dropdown-menu shadow-sm" aria-labelledby="ordersDropdown">
+                            <li>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'view_pending_payment_orders' else '' }}" 
+                                href="{{ url_for('view_pending_payment_orders') }}">
+                                    💵 Pending Payment Orders
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {{ 'active' if request.endpoint == 'view_pending_service_orders' else '' }}" 
+                                href="{{ url_for('view_pending_service_orders') }}">
+                                    🥤Pending Service Orders
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    {% if current_user.role == 'manager' %}:
+
+                        <!-------------------------------------------------------------->
+                        <!-- THE AUTHENTICATED EMPLOYEE HAS A MANAGER ROLE            -->
+                        <!-------------------------------------------------------------->
+
+                        <li class="nav-item dropdown">
+                            <!-- The main dropdown toggle button -->
+                            <a class="nav-link dropdown-toggle {{ 'active' if request.endpoint in ['display_inventory_dashboard', 'update_inventory'] else '' }}" 
+                                href="#" 
+                                id="ordersDropdown" 
+                                role="button" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                                    Inventory Dashboard
+                            </a>
+                            
+                            <!-- The dropdown menu links -->
+                            <ul class="dropdown-menu shadow-sm" aria-labelledby="ordersDropdown">
+                                <li>
+                                    <a class="dropdown-item {{ 'active' if request.endpoint == 'display_inventory_dashboard' else '' }}" 
+                                    href="{{ url_for('display_inventory_dashboard') }}">
+                                        View Inventory
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {{ 'active' if request.endpoint == 'update_inventory' else '' }}" 
+                                    href="{{ url_for('update_inventory') }}">
+                                        Update Inventory
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                    {% else %}
+
+                        <!-------------------------------------------------------------->
+                        <!-- THE AUTHENTICATED EMPLOYEE IS NOT A MANAGER              -->
+                        <!-------------------------------------------------------------->
+
+                        <!-- THE AUTHENTICATED USER CAN VIEW THE INVENTORY DASHBOARD -->
+                        <!-- Simplified Inventory Dashboard for LOOKUP ONLY (for non-managers users) -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'display_inventory_dashboard' else '' }}"
+                                href="{{ url_for('display_inventory_dashboard') }}">Inventory Dashboard
+                            </a>
+                        </li>
+
+                    {% endif %}
+
+                    <!-- THE AUTHENTICATED USER CAN LOGOUT -->
+                    <li class="nav-item">
+                        <a class="nav-link" style="color:black !important;" href="{{ url_for('logout') }}">
+                            Logout ({{ current_user.username }})
+                        </a>
+                    </li>
+
+                {% else %}
+
+                    <!-------------------------------------------------------------->
+                    <!-- THE USER HAS NOT BENN AUTHENTICATED YET             -->
+                    <!-------------------------------------------------------------->
+
+                    <!-- Offer the Login screen to the user -->
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'login' else '' }}"
+                            href="{{ url_for('login') }}">
+                            Employee Login
+                        </a>
+                    </li>
+
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert m-0 py-3 alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm "
+        role="alert" style="font-weight:500;color:darkred;text-align:center;font-size:1rem;">
+        {{ message | safe }}
+        <button type="button" class="btn-close" style="height:fit-content;" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    
+    <!-- The Dynamic Injection Point -->
+    <div class="container align-content-center my-4">
+        {% block content %}
+        <!-- Child pages will automatically insert their custom HTML here -->
+        {% endblock %}
+    </div>
+
+    <!-- Universal Sticky Footer -->
+    <footer class="footer mt-auto py-3 bg-light text-center">
+        <div class="container tex-center w-100">
+            <p>&copy; 2026 🥤Oasis Smoothie Shop. All rights reserved.</p>
+        </div>
+    </footer>
+
+<!-- Page-specific JavaScript blocks go at the very bottom -->
+{% block extra_js %}{% endblock %}
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+</body>
+</html>

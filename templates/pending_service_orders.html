@@ -1,0 +1,141 @@
+<!-- pending_service_orders.html -->
+{% extends "base.html" %}
+
+{% block title %}🥤 Production Kitchen Queue - Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<!-- Automatically auto-refresh every 15 seconds to look for new kiosk orders -->
+<meta http-equiv="refresh" content="15">
+<style>
+    div.card.order-card {
+    border-left: 5px solid #ffc107;
+    height: 360px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+div.card.order-card .card-header {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+div.card.order-card .card-body {
+    flex-grow: 1 !important;
+    margin-top: 0 !important;
+}
+
+div.card.order-card .card-footer {
+    margin-top: auto !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Payment Terminal Stats -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h1 class="h2 mb-0 text-dark">🥤Pending Service Queue</h1>
+            <small class="text-muted">Blending Station Live Monitor</small>
+        </div>
+        <div class="text-end">
+            <p class="badge fs-5 text-black shadow-sm fw-semibold p-3 mb-0" style="background-color:greenyellow;">
+                Active Blends: {{ orders|length }}
+            </p>
+        </div>
+    </div>
+
+
+    <!-- Orders Layout Grid -->
+    {% if orders %}
+    <!-- Add align-items-start to the row (and remove h-100 from .card) -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 align-items-start">
+        {% for order in orders %}
+            <div class="col">
+                <div class="card shadow-sm order-card border-light-subtle" style="background-color: #F8F9FA;">
+
+                    <!-- Order Header -->
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center border-0 pt-3 pb-3 rounded-top"
+                        style="width:100%;">
+                        <h5 class="fw-semibold text-start mb-0 text-start" style="color:peachpuff;">Order #{{ order.id }}
+                        </h5>
+                        <h6 class="text-black border border-warning-subtle p-1 rounded text-end"
+                            style="display:inline;background-color:peachpuff;">
+                            {{ order.created_at.strftime('%I:%M %p') if order.created_at else 'Just Now' }}
+                        </h6>
+                    </div>
+                  
+                   <!-- Card Body with hard 220px ceiling, top-aligned content, and bottom fade indicator -->
+                    <div class="card-body text-start" style="position: relative; background-color:#F8F9FA; max-height: 220px; overflow: hidden; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; align-items: flex-start !important; text-align: left !important;">
+
+                        <!-- Added !important to text-align: left to override base.html -->
+                        <div class="text-start" style="width: 100%; display: block; text-align: left !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-2">
+                                <h5 class="mb-0 fw-semibold" style="color: darkred; text-align: left !important;">🥤Pending Service Order:</h5>
+                            </div>
+
+                            <!-- Rows: Each Distinct Smoothie -->
+                            {% for cup_num, cup_items in order.order_items | groupby('smoothie_number') %}
+                                {% set first_item = cup_items | first %}
+                                <div class="pb-2 {% if not loop.last %}border-bottom mb-2{% endif %}" style="line-height: 1.4;">
+                                    <!-- Removed me-2 for normal single-space gap after colon -->
+                                    <span class="fw-semibold font-monospace text-black">
+                                        #{{ cup_num }} {{ first_item.smoothie.name }}:
+                                    </span>
+                                    <!-- Removed ps-3 so ingredients start right after the smoothie name -->
+                                    <span>
+                                        {% set active_ings = [] %}
+                                        {% for ing in cup_items %}
+                                            {% if ing.add_ingredient and ing.ingredient_quantity > 0 %}
+                                                {% set _ = active_ings.append(ing.ingredient.name) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% for name in active_ings %}
+                                            <h6 class="mb-0" style="display: inline;">
+                                                {{ name }}{{ '.' if loop.last else ', ' }}
+                                            </h6>
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                            {% endfor %}        
+                            
+                            <!-- Bottom Fade-Out Gradient Overlay -->
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 28px; background: linear-gradient(to bottom, rgba(248, 249, 250, 0), #F8F9FA); pointer-events: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Order Action Footer -->
+                    <div class="card-footer mt-auto bg-light border-top pb-3 pt-3">
+                        <form action="{{ url_for('serve_order', order_id=order.id) }}">
+                            <button type="submit"
+                                class="btn btn-warning w-100 fw-semibold py-2 shadow-sm fs-6 text-dark mb-0">
+                                    Serve Order
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State Dashboard fallback -->
+        <div class="text-center py-5 my-5">
+            <div class="display-1 text-muted opacity-25 mb-3">💳</div>
+            <h3 class="text-secondary fw-semibold">No orders in the Kitchen Queue</h3>
+            <p class="text-muted">All Blend Orders have been served successfully.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

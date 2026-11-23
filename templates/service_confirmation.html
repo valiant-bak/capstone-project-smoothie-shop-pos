@@ -1,0 +1,100 @@
+<!-- service_confirmation.html -->
+{% extends 'base.html' %}
+
+{% block title %}Service Confirmation | Oasis Smoothie Shop{% endblock %}
+<link rel="stylesheet" href="https://cloudflare.com">
+
+
+{% block content %}
+
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+            <div class="bg-success text-white text-center p-4">
+                <h2 class="fw-bold text-center my-0 w-100">Order Served!</h2>
+            </div>
+            <div class="card-body bg-white p-3">
+                <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-2 mx-3 border border-light-subtle">
+                    <h4 class="text-black text-uppercase d-block fw-semibold w-100 text-center">
+                        ORDER NUMBER: {{ order_id }}
+                    </h4>
+                </div> 
+                
+                <!-- Loop through the individual items belong to THIS specific order's ticket -->
+                <div class="card-body bg-white p-3">
+                        <!-- <div class="mb-2 border-light-subtle shadow-sm p-3 bg-light position-relative"> -->
+                    {% for smoothie_data in ticket_smoothies.values() %}
+                        <!-- <div class="container g-0 mb-2 bg-light"> -->
+                            <!-- <div class="container mb-2 small align-items-center"> -->  
+                        <div class="mb-2 border-light-subtle shadow-sm p-3 bg-light position-relative">
+                            <div class="container g-0 mb-0 bg-light">
+                                <div class="mb-2 align-items-start">
+                                    <h6 class="fw-semibold" style="color:darkred;display:inline;">{{ smoothie_data.smoothie_number }} </h6>
+                                    <h5 class="text-success fw-semibold mb-1" style="display:inline;">🥤{{ smoothie_data.smoothie_name }}</h5>
+                                </div>
+                                <div class="row mb-2 small align-items-start">
+                                    <div class="col-11 ps-3 text-muted">
+                                        {% set active_ings = [] %}
+                                        {% for ing in smoothie_data.ingredients %}
+                                            {% if ing.add_ingredient and ing.ingredient_quantity > 0 %}
+                                                {% set _ = active_ings.append(ing.ingredient_name) %}
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% for name in active_ings %}
+                                            <h6 style="display: inline;">{{ name }}{{ '.' if loop.last else ', ' }}</h6>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div> 
+                        </div>
+                    {% endfor %}
+
+                    <!-- Order Total -->
+                    <div class="mb-2 border-light-subtle shadow-sm p-3 bg-light position-relative">
+                        <div class="container g-0 mb-2 bg-light">
+                            <div class="row align-content-between g-2 text-muted small mb-0">
+                                <h5 class="col-9 text-start fw-bold text-dark">ORDER TOTAL:</h5>
+                                <h5 class="col fw-bold text-dark text-end" style="font-family:monospace;">${{ "%.2f"|format(grand_total) }}</h5>
+                            </div>
+                        </div>
+                    </div>
+            
+                </div> 
+
+                <!-- Final Service Summary -->
+                <div class="p-3 rounded d-flex mb-4 mx-3" style="background-color:lightgreen;color:darkred;">
+                    <p class="text-uppercase w-100 text-center mb-0 p-0 fw-bold" >ORDER COMPLETE!</p>
+                </div>
+
+                <!-- Action Button Row to smoothly go to the next task -->
+                <div class="container">
+                    <div class="row align-content-between g-3 mb-2" >
+                        <div class="col col-md-6">
+                            <a href="{{ url_for('view_pending_payment_orders') }}" style="font-size:1rem;"
+                                class="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm text_wrap">
+                                💲PENDING PAYMENT ORDERS
+                            </a>
+                        </div>
+                        <div class="col col-md-6">
+                            <a href="{{ url_for('view_pending_service_orders') }}" style="font-size:1rem;"
+                                class="btn btn-success btn-lg w-100 py-3 fw-bold shadow-sm text-wrap">
+                                💁 PENDING SERVICE ORDERS
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row container g-0 align-items-center w-100">
+                        <div class="col-12 col-md-12 p-0">
+                            <form action="{{ url_for('view_menu') }}" class="m-0">
+                                <button type="submit" class="btn btn-success btn-lg w-100 py-3 mt-2 fw-bold shadow-sm" style="font-size:1rem;">
+                                    🥤START NEW SMOOTHIE ORDER
+                                </button>
+                            </form>
+                        </div>
+                    </div> 
+                </div>
+            </div>
+        </div>
+    </div>
+</div></div>
+{% endblock %}

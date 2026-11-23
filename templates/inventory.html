@@ -1,0 +1,118 @@
+<!-- inventory.html -->
+
+{% extends "base.html" %}
+
+{% block title %}🥤Inventory|Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+    table { width: 100%; border-collapse: collapse; margin-top:0; background-color:aquamarine;color:green;}
+    th, td { border: 1px solid darkred; padding: 12px; font-size:1rem; text-align: left; }
+    th { background-color: green; color: white; }
+    tr:nth-child(even) { background-color:lightcyan; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid w-100 p-0 my-4">
+
+    <h1>📋 Live Ingredient Inventory Status</h1>
+    <p>Logged in as Manager</p>
+
+    
+    <!-- WRAP TABLE IN FORM: Send all data to your Flask route via POST -->
+    <form action="{{ url_for('update_inventory') }}" method="POST" >
+        <!-- SECURITY token for the POST operation -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        
+        <button type="submit" class="btn btn-success mb-4 mt-3 me-3" style="color:darkred">💾 Save All Changes</button>
+
+        <!-- SECURITY: DEFENSIVE CODING: Discard the edits -->
+        <a class="btn button btn-success mb-4 mt-3" href="{{ url_for('display_inventory_dashboard') }}">Do NOT Save! </a>
+    
+        <table class="w-100">
+            <thead>
+                <tr>
+                    <th>Ingredient Name</th>
+                    <th>Ingredient Portion</th>
+                    <th>Measurement Unit</th>
+                    <th>Current Stock Portions</th>
+                    <th>Reorder Stock Portions</th>
+                    <th>Minimum Stock Portions</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <!-- FLASK JINJA LOOP: Iterates through each item sent from Python -->
+                {% for ing in ingredients %}
+
+                {### DYNAMIC ROW HIGHLIGHTER: Applies the alert style if inventory is low ###}
+        
+                <tr {% if ing.id not in stock_exclusions %} 
+                        {% if ing.current_stock <= ing.minimum_stock %} class="out-of-stock"{% endif %}
+                        {% if ing.current_stock <= ing.reorder_stock %} class="low-stock"{% endif %}
+                    {% else %}   
+                        style="background-color:lightgray; color:gray"
+                    {% endif %}>
+                    
+                    <td><strong>{{ ing.name }}</strong></td>
+                    <td>{{ ing.portion }}</td>
+                    <td>{{ ing.unit_type }}</td>
+
+                    <!-- EDITABLE FIELDS: Changed plain text to positive number input with 0-9 digits -->
+                    <td>
+                        <input type="number" min="0" max="300" 
+                            step="1" 
+                            class="cell-input"
+                            {% if ing.id in invalid_current_stock_list or
+                                  ing.id in invalid_current_to_minimum_relationship_list %}
+                                style="background-color:yellow; border:2px solid darkred;" {% endif %}
+                            pattern="[0-9]+" 
+                            name="current_stock_{{ ing.id }}" 
+                            value="{{ ing.current_stock }}"
+                            {% if ing.id in stock_exclusions %}disabled{% endif %}
+                            required>
+                    </td>
+                    <td>
+                        <input type="number" min="0" max="300"
+                            step="1" 
+                            class="cell-input"
+                            {% if ing.id in invalid_reorder_stock_list or
+                                  ing.id in invalid_reorder_to_minimum_relationship_list %}
+                                style="background-color:yellow; border:2px solid darkred;" {% endif %}
+                            pattern="[0-9]+" 
+                            name="reorder_stock_{{ ing.id }}" 
+                            value="{{ ing.reorder_stock }}"
+                            {% if ing.id in stock_exclusions %}disabled{% endif %}
+                            required>
+                    </td>
+                    <td>
+                        <input type="number" min="0" max="300"
+                            step="1" 
+                            class="cell-input"
+                            {% if ing.id in invalid_minimum_stock_list or
+                                  ing.id in invalid_current_to_minimum_relationship_list or
+                                  ing.id in invalid_reorder_to_minimum_relationship_list %}
+                                style="background-color:yellow; border:2px solid darkred;" {% endif %}
+                            pattern="[0-9]+" 
+                            name="minimum_stock_{{ ing.id }}" 
+                            value="{{ ing.minimum_stock }}"
+                            {% if ing.id in stock_exclusions %}disabled{% endif %}
+                            required>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+     
+        <button type="submit" class="btn btn-success mt-4 mt-3 me-3" style="color:darkred">💾 Save All Changes</button>
+
+        <!-- SECURITY: DEFENSIVE CODING: Discard the edits -->
+        <a class="btn button btn-success mt-4 mt-3" href="{{ url_for('display_inventory_dashboard') }}">Do NOT Save! </a>
+
+    </form>
+</div>
+
+{% endblock %}

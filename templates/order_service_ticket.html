@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}🥤Production Kitchen Queue - Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<!-- Automatically auto-refresh every 15 seconds to look for newly paid orders -->
+<!-- <meta http-equiv="refresh" content="15"> -->
+<link rel="stylesheet" href="https://cloudflare.com">
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid w-100 p-0 my-0">
+        <div class="card align-items-center w-100 w-lg-50 mx-auto">
+            <div class="row justify-content-center w-100 align-items-center" style="min-height:80vh;background-color:beige;">
+                <div class="col-12 col-md-8 col-lg-6">
+                    <div class="shadow-lg border-0 rounded-3 overflow-hidden">    
+                        <div class="bg-success text-white text-center p-4">
+                            <h2 class="fw-bold text-center my-0 w-100">Kitchen Ticket</h2>
+                        </div>
+                        <div class="card-body bg-white p-3">
+                            <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-2 border border-light-subtle">
+                                <h4 class="text-black text-uppercase d-block fw-semibold w-100 text-center">
+                                    ORDER NUMBER: {{ order_id }}
+                                </h4>
+                            </div> 
+                            
+                            <!-- Loop through the individual items belong to THIS specific order's ticket -->
+                            {% for smoothie_data in ticket_smoothies.values() %}
+                                <div class="card-body bg-white p-3">
+                                    <div class="mb-2 border-light-subtle shadow-sm p-3 bg-light position-relative">
+                                        <div class="container g-0 mb-2 bg-light">
+                                            <div class="mb-2 align-items-start">
+                                                <h6 class="fw-semibold" style="color:darkred;display:inline;">{{ smoothie_data.smoothie_number }} </h6>
+                                                <h5 class="text-success fw-semibold mb-1" style="color:black; display:inline;">🥤{{ smoothie_data.smoothie_name}}</h5>
+                                            </div>
+                                            
+                                            <div class="container mb-2 small align-items-center">
+
+                                                <div class="row align-content-between g-1 text-muted" style="color:green; border-bottom: 1px darkred solid;">
+                                                    <h4 class=" col-9 text-start" style="color:green;">Ingredients:</h4>
+                                                    <h5 class=" col-2 text-end" style="color:green;">Qty</h5>
+                                                </div>
+                                                {% for ing in smoothie_data.ingredients %}
+                                                    {% if ing.add_ingredient %}
+                                                    <div class="row align-content-between g-1 text-muted" style="border-bottom: 1px darkred solid;">
+                                                        <h5 class=" col-9 text-start">{{ ing.ingredient_name }}</h5>
+                                                        <h5 class=" col-2 text-end pe-3">{{ ing.ingredient_quantity }}</h5>
+                                                    </div>
+                                                    {% endif%}
+                                                {% endfor %}
+
+                                                <div class="row align-content-between g-1 text-muted" style="color:red;border-bottom: 1px darkred solid;">
+                                                    <h4 class=" col-9 text-start" style="color:red;">Remove:</h4>
+                                                    <!-- <h5 class=" col-2 text-end" style="color:red">Qty</h5> -->
+                                                </div>
+                                        
+                                                {% for ing in smoothie_data.ingredients %}
+                                                    {% if not ing.add_ingredient %}
+                                                    <div class="row align-content-between g-1 text-muted" style="border-bottom: 1px darkred solid;">
+                                                        <h5 class=" col-9 text-start" style="color:red;">{{ ing.ingredient_name }}</h5>
+                                                        <!-- <h5 class=" col-2 text-end pe-3">NO</h5> -->
+                                                    </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                
+                        </div>
+                    </div>
+                    <!-- Order Action Buttons -->
+                    <div class="card-footer bg-light border-top pb-3 pt-3">  
+                        <form action="{{ url_for('serve_order', order_id=order_id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow-sm fs-5">
+                                PRESS HERE TO SERVE ORDER
+                            </button> 
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

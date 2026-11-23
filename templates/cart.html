@@ -1,0 +1,186 @@
+<!-- cart.html -->
+{% extends "base.html" %}
+
+{% block title %} 🛒 Cart | Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid w-100 p-0 my-4"> 
+    <div class="card container smoothie-container align-items-center w-100 w-lg-50 mx-auto">
+
+        <!-- TITLE AND MESSAGE FOR EMPTY CART -->
+        <div class="row w-100 p-3">
+
+            <div style="display: flex !important; justify-content: space-between!important;align-items:center!important;width:100%!important">
+                <h2 class="fw-semibold mt-3 mb-2">🛒 Order Cart Summary</h2>
+                <span class="fs-4 mt-3 mb-2 fw-semibold" style="margin-left: auto !important;">{{ items|length }} Items</span>
+            </div>
+
+            {% if not items %}
+            <div class="text-center py-5">
+                <p class="text-black fs-5">Your cart is currently empty!</p>
+                <a href="{{ url_for('view_menu') }}" class="btn button btn-lg mt-2">+ Add Your First Smoothie</a>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- CART ITEMS -->
+        <!-- Loop through each customized smoothie card -->
+        {% for item in items %}
+
+            <!-- Smoothie Card: Rows split content into Left (Description) and Right (Price/Action) sides -->
+            <div class="row smoothie-container container mb-3 mx-3 border-light-subtle shadow-sm px-2 py-4 bg-light"
+                {% if failed_smoothie_id|int==item.smoothie_id|int %} style="border:solid red 2px;"{% endif %}>
+    
+                <!-- LEFT COLUMN: Smoothie details and custom ingredients roster -->
+                <div class="col-8 align-items-start">
+                    <h6 class="fw-semibold" style="color:darkred;display:inline;">{{ item.smoothie_number }} </h6>
+                    <h5 class="text-success fw-bold mb-1" style="display:inline;"">🥤{{ item.smoothie_name }}</h5>
+                    <div class="text-muted small mb-3">Standard Recipe Price: ${{
+                        "%.2f"|format(item.smoothie_base_price) }}</div>
+
+                    <div class="mt-2 text-secondary ps-3 border-start border-secondary border-2">
+
+                        <!-- Unified Recipe Item List -->
+                        <div class="mb-2 small">
+                            <strong class="text-dark">Ingredients in your smoothie:</strong>
+                            <span class="text-muted">
+                                {% set names_list = [] %}
+
+                                {# Gather standard ingredients #}
+                                {% for ing in item.recipe_ingredients %}
+                                    {% set _ = names_list.append(ing.name) %}
+                                {% endfor %}
+
+                                {# Gather swapped/substituted ingredients #}
+                                {% for ing in item.sub_ingredients %}
+                                    {% set _ = names_list.append(ing.name) %}
+                                {% endfor %}
+
+                                {# Print nicely formatted, comma-separated list #}
+                                {{ names_list|join(', ') }}
+
+                                {% if not names_list %}
+                                    <span class="fst-italic text-danger">No ingredients selected!</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Premium Add-ons Section -->
+                        <div class="mb-2 small">
+                            <strong class="text-dark">Premium Add-ons:</strong>
+                            {% if item.addon_ingredients %}
+                                <span class="text-muted">
+                                    {% for addon in item.addon_ingredients %}
+                                        {{ addon.name }} (+ ${{ "%.2f"|format(addon.cost) }}){% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                            {% else %}
+                                <span class="text-muted fst-italic">No Premium Ingredients</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Item Subtotal display -->
+                        <div class="mt-2 small text-dark fw-bold">
+                            Item Total: ${{ "%.2f"|format(item.smoothie_price) }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Calculated smoothie price box and DELETE button -->
+                <div class="col-4 align-items-end">
+                    <!-- Pricing and Deletion Action Column -->
+                    <div class="text-md-end d-flex flex-md-column justify-content-between align-items-end h-100">
+                        <h5>Subtotal: ${{ "%.2f"|format(item.smoothie_price) }}</h5>
+                    </div>
+                    <!-- Delete Item Form passing loop.index0 (0-based list position) -->
+                    <div class="text-md-end d-flex flex-md-column justify-content-between h-100">
+                        <form action="{{ url_for('remove_from_cart', item_index=loop.index0) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit" class="btn btn-outline-danger btn-md fw-bold">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div> <!-- End Row -->
+
+        {% endfor %}
+
+        <div class="smoothie-content content bg-light mb-4 mx-0 "
+            {% if not items %} style="display:none;"
+            {% else %}  style="display:flex;"
+            {% endif %}>
+
+            <div class="row g-3 mb-4 ">
+
+                <div class="col-12 m-0 border_top">
+                    <div class="mb-4 w-100 align-items-center" style="text-align:center;">
+                        <h4 class="fw-bold text-dark m-4">CART GRAND TOTAL: <span class="text-success">${{
+                                "%.2f"|format(grand_total) }}</span></h4>
+                    </div>
+                </div>
+
+                <!-- CTA bUTTONS ROW -->
+                <!-- Uses the exact edge-breakout flex engine from menu.html to guarantee perfect card alignment symmetry -->
+                <div class="d-flex justify-content-between mb-3 mx-n3 px-3" style="gap: 16px; margin-top: 0 !important;">
+                    
+                    <!-- LEFT SIDE: ADD SMOOTHIES Button (Styled exactly like your green menu buttons but with your accent colors) -->
+                    <a href="{{ url_for('view_menu') }}" 
+                    class="btn btn-outline-danger px-2 py-2 fw-semibold shadow-sm text-center d-flex align-items-center justify-content-center"
+                    style="height: 50px; width: 50%; background-color: #ffecd2; border: 1px solid #ff7e5f; color: darkred; font-size: 0.95rem;">
+                        ⮜ ADD SMOOTHIES
+                    </a>
+
+                    <!-- RIGHT SIDE: COMPLETE ORDER STATE SELECTOR -->
+                    <div style="width: 50%; height: 50px;">
+                        
+                        <!-- CRITICAL JINJA INTERCEPT CHECK: Verifies live inventory hard stops -->
+                        {% if error_ingredients %}
+                            
+                            <!-- HARD LOCKED STATE: Deficit detected. -->
+                            <button type="button" 
+                                    class="btn btn-secondary px-2 py-2 fw-semibold shadow-sm text-center d-flex align-items-center justify-content-center w-100 h-100" 
+                                    disabled 
+                                    role="alert"
+                                    style="cursor: not-allowed; opacity: 0.8; background-color:#F8D7DA !important; color:darkred !important; border: 1px solid darkred !important; font-size: 0.85rem; line-height: 1.2;">
+                                NOT ENOUGH INGREDIENTS
+                            </button>
+
+                        {% elif items and items|length > 0 %}
+
+                            <!-- NOMINAL CLEAR PATH STATE: Form targets view_cart POST entry gate natively -->
+                            <form action="{{ url_for('process_order') }}" method="POST" class="w-100 h-100 m-0 p-0">
+                                <!-- SECURITY token for the POST operation -->
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                
+                                <button type="submit" 
+                                        class="btn px-2 py-2 fw-semibold shadow-sm text-center d-flex align-items-center justify-content-center w-100 h-100"
+                                        style="background-color: #FFA07A; border: 1px solid #e07b53; color: black; font-size: 0.95rem;">
+                                    COMPLETE ORDER ⮞
+                                </button>
+                            </form>
+
+                        {% else %}
+
+                            <!-- FALLBACK EMPTY BASKET STATE -->
+                            <button type="button" 
+                                    class="btn btn-secondary px-2 py-2 fw-semibold shadow-sm text-center d-flex align-items-center justify-content-center w-100 h-100" 
+                                    disabled
+                                    style="font-size: 0.95rem;">
+                                COMPLETE ORDER ⮞
+                            </button>
+
+                        {% endif %}
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

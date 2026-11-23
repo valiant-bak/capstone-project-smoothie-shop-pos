@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}🥤Production Kitchen Queue - Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<!-- Automatically auto-refresh every 15 seconds to look for newly paid orders -->
+<!-- <meta http-equiv="refresh" content="15"> -->
+
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cloudflare.com">
+
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+        
+            <!-- Main Custom Branding Matrix Container -->
+            <div class="matrix-container shadow-lg mb-5">
+                <div class="matrix-header row g-3">
+                    <div class="col-12">
+                        <h3 class="mb-0 fw-bold text-center" style="color:darkred;">🥤 BLENDING SMOOTHIE ORDER!</h3>
+                        <p class="text-black fs-4 mt-3 text-center"> ORDER ID: {{ order_id }}</p>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Order Body Details -->
+        <div class="card-body bg-white">
+            <!-- Loop through the individual items belong to THIS specific order's ticket -->
+            {% for item in order.kitchen_ticket['items'] %}
+                <div class="pb-2 {% if not loop.last %} border-bottom mb-2 {% endif %}">
+                    <h5 class="text-primary fw-bold mb-1">
+                        🥤 {{ item['smoothie'].name }} 
+                    </h5>
+                    
+                    <!-- Clear adjustments for modifications -->
+                    <div class="text-start ps-3 mb-1 fs-5">
+                        {% if item['modifications'] %}
+                            {% for mod_name in item['modifications'] %}
+                                <!-- mod_name is a direct string (e.g., 'Oat Milk') -->
+                                <p class="text-danger fw-semibold my-0">{{ mod_name }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted fst-italic fs-3 my-0">Standard recipe formula (No customizations)</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Order Action Buttons -->
+        <div class="card-footer bg-light border-top pb-3 pt-3">
+           
+            {% if request.endpoint == 'view_pending_orders' %} 
+                <!-- The order is identified by order_id (from the Database)-->
+                <form action="{{ url_for('serve_pending_order', order_id=order.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow-sm fs-5">
+                        PRESS HERE TO SERVE ORDER
+                    </button> 
+                </form>
+            {% else %}  
+                <!-- if request.endpoint == 'confirm_payment' -->
+                <!-- The order is saved in the active session -->
+                <form action="{{ url_for('serve_order') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow-sm fs-5">
+                        PRESS HERE TO SERVE ORDER
+                    </button> 
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

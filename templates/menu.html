@@ -1,0 +1,707 @@
+<!-- menu.html -->
+
+{% extends "base.html" %}
+
+{% block title %}🥤Checkout|Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #f5f6fa;
+        margin: 40px;
+        color: #2f3542;
+    }
+
+    .menu-title {
+        text-align: center;
+        margin-bottom: 40px;
+        font-size: 2.5rem;
+        color: #ff4757;
+    }
+
+    .smoothie-container {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 0 auto 30px auto;
+        max-width: 650px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .smoothie-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 2px solid #f1f2f6;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+
+    .smoothie-name {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #2f3542;
+        margin: 0;
+    }
+
+    /* DYNAMIC PRICE TARGET HIGHLIGHT */
+    .smoothie-price {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2ed573;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .price-pop {
+        transform: scale(1.1);
+        color: #20bf6b;
+    }
+
+    .section-label {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        color: #747d8c;
+        margin-bottom: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .row-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 15px;
+    }
+
+    .row-item input {
+        margin-right: 10px;
+        transform: scale(1.1);
+        cursor: pointer;
+    }
+
+    .addon-badge {
+        background: #ffeaa7;
+        color: black;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: normal;
+        margin-left: auto;
+    }
+
+    .removal-warning {
+        display: none;
+        background: #ffdfdf;
+        color: #c0392b;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-top: 4px;
+        border: 1px solid #ffb8b8;
+    }
+
+    .btn-order {
+        background: #ff4757;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.1rem;
+        width: 100%;
+        transition: background 0.2s;
+        margin-top: 10px;
+    }
+
+    .btn-order:hover {
+        background: #ff6b81;
+    }
+
+    .flash-msg {
+        padding: 12px;
+        background: #dff9fb;
+        color: #009432;
+        border-radius: 6px;
+        margin: 0 auto 20px auto;
+        max-width: 650px;
+        text-align: center;
+        font-weight: bold;
+        border: 1px solid #badc58;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-2px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #smoothie-recipe-directory {
+        display: block;
+    }
+
+    /* By default, hide ALL smoothie cards on the screen */
+    .smoothie-customization-card {
+        display: none;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid d-flex justify-content-center w-100">
+    <div class="card w-100 m-0">
+
+        <!-- MENU - DEFAULT PAGE when no smoothie has been selected  -->
+        <div class="smoothie-header w-100 mx-0 my-0 px-3 px-md-5 py-4 row align-items-center"
+            style="background-color:lavender; margin-left: 0 !important; margin-right: 0 !important;">
+            <!-- Keeps text together on desktop, but lets it stack on tight mobile screens safely -->
+            <div class="col-12 col-md-10 text-center text-md-start mb-3 mb-md-0">
+                <h3 style="color:#D53C6F; font-weight:500;" class="fs-5 fs-md-3"> 🥤 Welcome to our Customization
+                    Station</h3>
+                <p class="text-muted text-center text-md-start fs-6 fs-4 mb-0">Please select the Smoothie Drink</p>
+            </div>
+
+            <!-- Keeps the cart button right-aligned on desktop, but centers it cleanly below the title on phones -->
+            <div class="col-12 col-md-2 d-flex justify-content-center justify-content-md-end">
+                <a href="{{ url_for('view_cart') }}" class="btn btn-outline-dark btn-md py-3 fw-bold position-relative"
+                    style="background-color:lightgreen; width: 72px; max-width: 72px;">
+                    <img src="{{ url_for('static', filename='img/cart.png') }}" class="img-fluid" alt="Cart Icon"
+                        style="height: 22px; object-fit: contain;">
+
+                    <!-- Bypasses Python variables completely to read browser cookie list lengths directly! -->
+                    {% if session.get('cart') and session.get('cart')|length > 0 %}
+                        <span
+                            class="position-absolute top-0 start-100 text-white translate-middle badge rounded-pill bg-danger"
+                            style="margin-left: -5px; margin-top: 5px;">
+                            {{ session.get('cart')|length }}
+                        </span>
+                    {% endif %}
+                </a>
+            </div>
+        </div> <!-- END OF MENU -->
+
+        <!-- CUSTOMIZATIONS FORM -->
+        <form class="smoothie-container mt-0 p-0 w-100" style="font-size: 0.9 rem;" 
+            action="{{ url_for('customize_menu') }}" method="POST">
+            <!-- SECURITY token for the POST operation -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            <!-- STEP 1: DROPDOWN SELECTOR to choose a Smoothie -->
+            <label id="smoothie_selector" for="smoothie-select" class="form-label h5 text-black mb-2"></label>
+
+            <select class="form-select fs-5 text-black text-center form-select-lg fw-semibold" 
+                name="smoothie_id"
+                id="smoothie-select" 
+                onchange="switchActiveSmoothieCardView(this.value)" required>
+
+                <!-- 1. DYNAMIC DEFAULT: Only selected if no failure context exists -->
+                <option value="" data-price="0.00" {% if not failed_smoothie_id %}selected{% endif %} disabled>
+                    --- Select Your smoothie ---
+                </option>
+
+                <!-- 2. ITERATION LOOP: Dynamically flags the option that triggered the reload -->
+                {% for drink in smoothies %}
+                    <option value="{{ drink.id }}" 
+                        data-price="{{ drink.base_price }}" 
+                        {% if failed_smoothie_id|int == drink.id|int %} selected {% endif %}>
+                        {{ drink.name }} (${{ "%.2f"|format(drink.base_price) }})
+                    </option>
+                {% endfor %}
+
+            </select>
+
+            <!-- MENU: The Standard Recipes overview dashboard block -->
+            <div id="smoothie-recipe-directory" class="smoothie-container mb-0">
+                <h4
+                    style="color:#D53C6F; font-weight:600; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; margin-bottom: 20px; text-align: center;">
+                    Our Smoothie Menu & Standard Recipes
+                </h4>
+                
+                <!-- MENU CONTENT-->
+                {% for item in menu_data %}
+                
+                    <div style="font-siZe:15px; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2ed573; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+
+                        <h5 style="font-weight: 700; color: #2f3542; margin: 0 0 4px 0;">
+                            {{ item.smoothie.name }} — ${{"%.2f"|format(item.smoothie.base_price) }}
+                        </h5>
+                        <p style="font-size: 0.95rem; color: green; margin: 0 0 12px 0;">
+                            <i>{{ item.smoothie.slogan }}</i>
+                        </p>
+
+                        <!-- Standard Composite Base Ingredients Assembly (Section 1 + Section 2 Defaults) -->
+                        <div style="margin-bottom: 8px; font-size: 0.9rem;">
+                            <span style="font-weight: 600; color:darkred; text-transform: uppercase;">
+                                Ingredients:
+                            </span>
+                            <span style="color: darkred;">
+                                {% set default_ingredients = namespace(items=[]) %}
+
+                                <!-- Gather Section 1: Standard Core Recipe Checkboxes -->
+                                {% for recipe in item.recipe_items %}
+                                    {% set _ = default_ingredients.items.append(recipe.ingredient.name) %}
+                                {% endfor %}
+
+                                <!-- Gather Section 2: Default Choices from the Nested Radio Dictionary -->
+                                {% for group_name, subs in item.radio_groups.items() %}
+                                    {% for sub_item in subs %}
+                                        {% if sub_item.is_default %}
+                                            {% set _ = default_ingredients.items.append(sub_item.ingredient.name) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+
+                                {{ default_ingredients.items|join(', ') }}
+                            </span>
+                        </div>
+
+                        <!-- Standard Premium Customization Opportunities (Section 3 Catalog Options) -->
+                        <div style="font-size: 0.9rem; border-top: 1px dashed #e4e7eb; padding-top: 8px; margin-top: 8px;">
+                            <span
+                                style="font-weight:400; color:black; text-transform: uppercase;">
+                                Available Premium Upgrades:</span>
+                            <span style="color: darkolivegreen; font-style: italic;">
+                                {% set available_addons = namespace(items=[]) %}
+
+                                {% for addon in item.addon_items %}
+                                    {# Look up the ingredient string directly from our dictionary using its ID string #}
+                                    {% set current_ingredient = ingredients_map[addon.ingredient_id|string] %}
+                                    
+                                    {% if current_ingredient %}
+                                        {% set addon_text = current_ingredient.name ~ " (+$" ~ "%.2f"|format(current_ingredient.cost) ~ ")" %}
+                                        {% set _ = available_addons.items.append(addon_text) %}
+                                        {% if addon.ingredient %}
+                                                {{ addon.ingredient.name }} (+${{ "%.2f"|format(addon.ingredient.cost) }}).
+                                        {% else %}
+                                            No Premium Ingredients selected (+${{ "%.2f"|format(0.0) }})
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+
+                    </div> <!-- END OF MENU CONTENT -->
+                {% endfor %}
+
+                <!-- CTA BUTTONS -->
+                <div class="d-flex justify-content-between mb-3 mx-n3 px-3" style="gap: 15px;">
+
+                    <!-- View active cart Link Button -->
+                    <a href="{{ url_for('view_cart') }}"
+                        class="btn btn-success flex-fill px-2 py-2 fw-semibold shadow-sm text-center position-relative d-flex align-items-center justify-content-center"
+                        style="height: 50px; width: 50%;">
+                        <img src="{{ url_for('static', filename='img/cart.ico') }}"
+                            style="object-fit:cover; height:35px;" alt="Cart Icon" class="me-1">
+                        VIEW CART
+                        <!-- Bypasses Python variables completely to read browser cookie list lengths directly! -->
+                        {% if session.get('cart') and session.get('cart')|length > 0 %}
+                        <span class="position-absolute text-white translate-middle badge rounded-pill bg-danger"
+                            style="top: 0; left: 100%; margin-left: -12px !important; z-index: 2;">
+                            {{ session.get('cart')|length }}
+                        </span>
+                        {% endif %}
+                    </a>
+
+                    <!-- Dynamic SELECT SMOOTHE Button Block on the Smoothie Card -->
+                    <a href="#smoothie_selector"
+                        class="btn button px-2 py-2 fw-semibold shadow-sm text-center flex-fill d-flex align-items-center justify-content-center"
+                        style="height: 50px; width: 50%;">
+                        SELECT SMOOTHIE
+                    </a>
+
+                </div> <!-- END of CTA buttons-->
+
+            </div> <!-- END of MENU -->
+
+            <!-- STEP 2: DYNAMIC CUSTOMIZATION CARDS (Scoped strictly by smoothie ID) -->
+            <div id="customization-cards-container" class="smoothie-card">
+
+                {% for item in menu_data %}
+                    <div id="smoothie-card-{{ item.smoothie.id }}"
+                        data-smoothie-base-price="{{ item.smoothie.base_price }}"
+                        class="smoothie-customization-card p-2 w-100" style="background-color:lightcyan;"
+                        {% if failed_smoothie_id|int == item.smoothie.id|int %} active {% endif %}>
+                        
+                        <h4 class="fw-semibold ps-3 mt-2 text-center" style="color:#D53C6F;">
+                            Begin your {{ item.smoothie.name }} Smoothie Experience
+                        </h4>
+                        <p style="font-size: 1.2rem; color: green; text-align:center;padding-left: 40px;"><i>{{ item.smoothie.slogan }}</i></p>
+                        <hr>
+
+                        <!-- SECTION 1 AND 3 SHARE A ROW -->
+                        <!-- It uses single column stack on mobile, scales to 2 side-by-side on desktop grids -->
+                        <div class="row row-cols-1 row-cols-md-2 g-2 my-3 justify-content-between" >
+
+                            <!-- SECTION 1: CORE INGREDIENTS CHECKBOXES -->
+                            <div class="col-md-5 card bg-light ms-4 p-2">
+                                <h6 class="fw-semibold text-success px-3" style="text-transform:uppercase;">
+                                    Smoothie Ingredients
+                                </h6>
+                                {% for recipe in item.recipe_items %}
+                                    <div class="form-check"
+                                        {% if recipe.ingredient_id in error_ingredients %} style="border:solid red 2px;" {% endif %}>
+                                        <input class="form-checkbox-input"  
+                                            id="recipe-{{ item.smoothie.id }}-{{ recipe.id }}"
+                                            type="checkbox" 
+                                            name="recipe_items-{{ item.smoothie.id }}" 
+                                            value="{{ recipe.id }}" 
+                                            {% if recipe.ingredient_id in error_ingredients %} disabled {% else %} checked {% endif %}
+                                            onchange="toggleRecipeIngredient(this, '{{ recipe.ingredient.name }}', '{{ item.smoothie.id }}')">
+                                        <label class="form-checkbox-label fs-6 p-1" for="recipe-{{ item.smoothie.id }}-{{ recipe.id }}"
+                                            {% if failed_smoothie_id|int==item.smoothie.id|int and recipe.ingredient_id in error_ingredients %}
+                                                style="color:black;text-decoration:line-through;font-weight:normal;opacity:0.6;"
+                                            {% endif %}>
+                                            {{ recipe.ingredient.name }}
+                                        </label>
+                                        <!-- Dynamic notice element placeholder matching the Section 1 warning style -->
+                                        <div id="recipe-notice-{{ recipe.id }}-{{ item.smoothie.id }}"
+                                            style="display:none; color:darkred; font-size: 0.9rem; font-weight: normal; padding: 6px 12px;"
+                                            class="swap-alert">
+                                        </div>
+                                    </div>
+                                {% endfor %} 
+                            </div> <!-- END OF SECTION 1 -->
+
+                            <!-- SECTION 3: PREMIUM ADDONS CHECKBOXES -->
+                            <div class="col-md-5 card bg-light me-4 p-2">
+                                <h6 class="fw-semibold text-success px-3" style="text-transform:uppercase;">
+                                    Premium Add-ons
+                                </h6>
+
+                                {% for addon in item.addon_items %}
+                                    <div class="form-check"
+                                        {% if addon.ingredient_id in error_ingredients %}style="border:solid red 2px;" {% endif %}>
+                                        <input class="form-checkbox-input" 
+                                            id="addon-{{ item.smoothie.id }}-{{ addon.id }}"
+                                            type="checkbox" 
+                                            name="addon_items-{{ item.smoothie.id }}" 
+                                            value="{{ addon.id }}"
+                                            {% if addon.ingredient_id in error_ingredients %} disabled{% else %} unchecked {% endif %}
+                                            onchange="recalculateLiveSmoothiePrice('{{ item.smoothie.id }}'),
+                                                      toggleAddonIngredient(this, '{{ addon.ingredient.name }}', '{{ item.smoothie.id }}')"
+                                            data-smoothie-base-price="{{ item.smoothie.base_price }}"
+                                            data-addon-cost="{{ addon.ingredient.cost }}">
+                                        <label class="form-checkbox-label fs-6 p-1"
+                                            for="addon-{{ item.smoothie.id }}-{{ addon.id }}"
+                                            {% if failed_smoothie_id|int==item.smoothie.id|int and addon.ingredient_id in error_ingredients %}
+                                                style="color:black;text-decoration:line-through;font-weight:normal;opacity:0.6  "
+                                            {% endif %}>
+                                            {{ addon.ingredient.name }} (+ ${{ "%.2f"|format(addon.ingredient.cost) }} )
+                                        </label>
+                                        <!-- Dynamic notice element placeholder matching the Section 1 warning style -->
+                                        <div id="addon-notice-{{ addon.id }}-{{ item.smoothie.id }}"
+                                            style="display:none; color:darkred; font-size: 0.9rem; font-weight: normal; padding: 6px 12px;"
+                                            class="swap-alert">
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div> <!-- END OF SECTION 3 -->
+                        </div> <!-- END OF SECTIONS 1 AND 3 (row)-->
+                        <hr>
+                        <!-- Stacks as 1 column on mobile, automatically splits into 3 columns on desktops -->
+                        <div class="row row-cols-1 row-cols-md-3 w-100 g-2 justify-content-center">
+
+                            <!-- SECTION 2: RADIO SELECTION OPTIONS -->                
+                            {% for group_name, subs in item.radio_groups.items() %} 
+                               
+                                <div class="col-md-3 card border bg-light m-2 px-2 py-3" style="width:30%!important;">
+                                    <h6 class="fw-semibold mt-2 text-success ps-3" style="text-transform:uppercase;">
+                                        The {{ group_name }}
+                                    </h6>
+                              
+                                    {% for sub_item in subs %}
+                                        <div class="form-check p-0 m-0">
+                                            <!-- Dynamic notice element placeholder matching the Section 1 warning style -->
+                                            <div id="sub_item-notice-{{ group_name }}-{{ item.smoothie.id }}"
+                                                style="display:none; color:darkred; font-size: 0.85rem; font-weight: normal; padding: 6px 12px;"
+                                                class="swap-alert">
+                                            </div>
+                                            <div  {% if sub_item.ingredient_id in error_ingredients %}
+                                                style="border:solid red 2px; padding: 6px 12 px; font-size:15px;"
+                                                {% endif %}>
+                                                <input class="form-radio-input ms-3" 
+                                                    id="radio-{{ item.smoothie.id }}-{{ sub_item.id }}"
+                                                    type="radio" 
+                                                    name="group_{{ group_name }}_{{ item.smoothie.id }}" 
+                                                    value="{{ sub_item.id }}"  
+                                                    {% if sub_item.is_default %}data-is-default="true" checked 
+                                                    {% else %}data-is-default="false" {% endif %}
+                                                    data-is-default="{{ sub_item.is_default }}""
+                                                    {% if sub_item.ingredient_id in error_ingredients %} disabled {% endif %}
+                                                    {% if sub_item.is_default %} checked {% endif %}
+                                                    onchange="toggleSubIngredient(`{{ group_name }}`, `{{ sub_item.ingredient_id }}`, this, `{{ item.smoothie.id }}`)"> 
+                                                <label class="form-radio-label fs-6 ms-1 p-1" for="radio-{{ item.smoothie.id }}-{{ sub_item.id }}">
+                                                    {{ sub_item.ingredient_id }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- SECTION 2 AUTOMATION COMPONENT To select the next radio button if the sub item is out of -->
+                        <script type="text/javascript">
+                            document.addEventListener("DOMContentLoaded", function () {
+                                // Find all unique radio buttons belonging to a specific smoothie's group variations
+                                const radioGroups = {};
+                                const radios = document.querySelectorAll('input[type="radio"][name^="group_"]');
+
+                                radios.forEach(radio => {
+                                    const groupName = radio.getAttribute('name');
+                                    if (!radioGroups[groupName]) {
+                                        radioGroups[groupName] = [];
+                                    }
+                                    radioGroups[groupName].push(radio);
+                                });
+
+                                // Loop through every grouped set to enforce validation fallbacks
+                                for (const groupName in radioGroups) {
+                                    const optionList = radioGroups[groupName];
+
+                                    // Check if there is an active valid selection
+                                    let hasChecked = Array.from(optionList).some(r => r.checked && !r.disabled);
+
+                                    if (!hasChecked) {
+                                        // Locate the first available item inside this specific radio block that is in stock
+                                        const nextAvailable = Array.from(optionList).find(r => !r.disabled);
+
+                                        if (nextAvailable) {
+                                            nextAvailable.checked = true;
+                                            // Trigger the change handler manually so local pricing calculations and notices refresh
+                                            nextAvailable.dispatchEvent(new Event('change'));
+                                        }
+                                    }
+                                }
+                            });
+                        </script>
+                        <hr>
+
+                        <!-- STEP 3: COMPUTE PANEL & TRIGGER BUTTONS -->
+                        <div class="container card" style="background-color:lavender;">
+
+                            <div class="row mt-2 g-3 py-3">
+
+                                <!-- Smoothie Total Panel -->
+                                <div class="col-12 m-0">
+                                    <!-- Dynamic calculation display container anchor -->
+                                    <div class="matrix-price-panel p-2 text-center mx-0 "
+                                        style="background-color:lightgreen; color:darkred;">
+                                        <p class="smoothie-price fw-semibold fs-5 pt-2 text-black">
+                                            {{ item.smoothie.name }} Smoothie - TOTAL: $
+                                            <span id="display-price-{{ item.smoothie.id }}"> 
+                                                {{ "%.2f"|format(item.smoothie.base_price) }} 
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- CTA BUTTONS -->
+                                <div class="d-flex justify-content-between mb-3 px-3" style="gap: 15px;">
+
+                                    <!-- View active cart Link Button -->
+                                    <a href="{{ url_for('view_cart') }}"
+                                        class="btn btn-success flex-fill px-2 py-2 fw-semibold shadow-sm text-center position-relative d-flex align-items-center justify-content-center"
+                                        style="height: 50px; width: 50%;">
+                                        <img src="{{ url_for('static', filename='img/cart.png') }}"
+                                            style="object-fit:cover; height:35px;" alt="Cart Icon" class="me-1">
+                                        VIEW CART
+                                        <!-- Bypasses Python variables completely to read browser cookie list lengths directly! -->
+                                        {% if session.get('cart') and session.get('cart')|length > 0 %}
+                                        <span
+                                            class="position-absolute text-white translate-middle badge rounded-pill bg-danger"
+                                            style="top: 0; left: 100%; margin-left: -12px !important; z-index: 2;">
+                                            {{ session.get('cart')|length }}
+                                        </span>
+                                        {% endif %}
+                                    </a>
+
+                                    <!-- Dynamic ADD TO CART Button Block on the Smoothie Card -->
+                                    <button class="btn btn-success px-2 py-2 fw-semibold shadow-sm text-center flex-fill"
+                                        type="submit" 
+                                        name="action" 
+                                        value="add_smoothie"
+                                        style="height: 50px; width: 50%;" >
+                                        ADD TO CART   
+                                        <!-- {% if failed_smoothie_id == item.smoothie.id or error_ingredients %} 
+                                            disabled>REVIEW THE INGREDIENTS!
+                                        {% else %} 
+                                            <span>ADD TO CART</span>
+                                        {% endif %} -->
+                                    </button>
+
+                                </div> <!-- END of CTA buttons-->
+
+                            </div>
+                        </div> <!-- END of .matrix-row -->
+
+                    </div> <!-- END of customization-cards-container -->
+
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<!-- Real-Time Calculation Engines -->
+<script>
+
+    // Section 1: Handle unchecking warning notice logs
+    function toggleRecipeIngredient(checkbox, name, smoothieId) {
+        const noticeBox = document.getElementById(`recipe-notice-${checkbox.value}-${smoothieId}`);
+
+        if (noticeBox) {
+            if (!checkbox.checked) {
+                // BACKTICKS: Used here to cleanly evaluate the template variable string literal
+                noticeBox.className = "swap-alert";
+                noticeBox.style.background = "#fff3cd";
+                noticeBox.style.color = "darkred";
+                noticeBox.textContent = `⚠️ ${name} REMOVED`;
+                noticeBox.style.display = 'block';
+            } else {
+                noticeBox.style.display = 'none';
+                noticeBox.textContent = '';
+            }
+        }
+    }
+
+    // Section 2: Display immediate badge feedback acknowledging selection changes safely
+    function toggleSubIngredient(groupName, ingredientName, radioInput, smoothieId) {
+        const subBox = document.getElementById(`sub_item-notice-${groupName}-${smoothieId}`);
+        const isDefaultItem = radioInput.getAttribute('data-is-default') === 'true';
+
+        subBox.style.display = 'block'; 
+        subBox.className = "swap-alert";
+        subBox.style.background = "#e6f4ea";
+        subBox.style.color = "#137333";
+        subBox.textContent = `✓ ${ingredientName}`;
+      
+    } 
+
+    // Section 3: Handle premium add-on status log notifications on screen instantly
+    function toggleAddonIngredient(checkbox, name, smoothieId) {
+        const noticeBox = document.getElementById(`addon-notice-${checkbox.value}-${smoothieId}`);
+
+        if (noticeBox) {
+            if (checkbox.checked) {
+                noticeBox.style.display = 'block';
+                // Light green background styling for added state
+                noticeBox.className = "swap-alert";
+                noticeBox.style.background = "#e6f4ea";
+                noticeBox.style.color = "#137333";
+                noticeBox.textContent = `✓ ${name} ADDED`;
+            } else {
+                noticeBox.style.display = 'none';
+                noticeBox.textContent = '';
+            }
+        }
+    }
+
+
+    // SECTION 3 ENGINE: Dynamically tallies and updates pricing numbers on screen cleanly
+    function recalculateLiveSmoothiePrice(smoothieId) {
+        // Target the specific inner span containing only the number token
+        const priceNumericSpan = document.getElementById(`display-price-${smoothieId}`);
+
+        if (priceNumericSpan) {
+            // Find our master customization card container by its unique ID
+            const targetCard = document.getElementById(`smoothie-card-${smoothieId}`);
+
+            if (targetCard) {
+                // Direct, clean, and fast lookup off the card container itself!
+                const baselinePrice = parseFloat(targetCard.getAttribute('data-smoothie-base-price')) || 0.00;
+                
+                let addonsTotal = 0.00;
+                
+                // Gather checkboxes only within this specific active smoothie container
+                const activeAddons = targetCard.querySelectorAll('.form-checkbox-input:checked');
+                activeAddons.forEach(checkbox => {
+                    // Each 'data-addon-cost' has the addon ingredient price
+                    addonsTotal += parseFloat(checkbox.getAttribute('data-addon-cost')) || 0.00;
+                });
+
+                const liveCalculatedTotal = baselinePrice + addonsTotal;
+                console.log(`Live calculation for Smoothie ${smoothieId} -> Base Price: ${baselinePrice}, Addons: ${addonsTotal}, Total: ${liveCalculatedTotal}`) ;
+
+                // Overwrite ONLY the inner numeric value inside the stable text wrapper!
+                priceNumericSpan.textContent = liveCalculatedTotal.toFixed(2);
+            }
+        }
+    } 
+    
+    function switchActiveSmoothieCardView(selectedSmoothieId) {
+        // 1. Default and target blocks and cards
+        const defaultBlock = document.getElementById('smoothie-recipe-directory');
+        const targetBlock = document.getElementById('customization-cards-container');
+        
+        const allCards = document.querySelectorAll('.smoothie-customization-card');
+        const targetCard = document.getElementById(`smoothie-card-${selectedSmoothieId}`);
+
+        // 2. Hide every single customization block by default
+        allCards.forEach(card => {
+            card.style.display = 'none';
+        });
+
+        // 3. If no smoothie is selected (empty string), show the recipe directory and return
+        if (!selectedSmoothieId) { 
+            if (defaultBlock) {
+                defaultBlock.style.display = 'block';
+                targetBlock.style.display ='none';
+            } else {
+                targetBlock.style.display = 'block';
+            }
+            return;
+        }
+
+        // 4. if a smoothie has been selected from the dropdown list,
+        // Locate and display the chosen smoothie customization card
+        if (selectedSmoothieId){  
+            if (targetCard) {
+                targetCard.style.display = 'block';
+                defaultBlock.style.display = 'none';
+
+                if (defaultBlock) defaultBlock.style.display = 'none';
+                if (targetBlock) targetBlock.style.display = 'block'; 
+            }
+
+            // Run the calculations instantly so the price panel tallies out right
+            if (typeof recalculateLiveSmoothiePrice === "function") {
+                recalculateLiveSmoothiePrice(selectedSmoothieId);
+            }
+        }
+    }
+
+    function handleSmoothieDropdownChange(dropdownElement) {
+        const selectedSmoothieId = dropdownElement.value;
+        if (!selectedSmoothieId) return;
+
+        // Direct the browser to reload the page with the fresh smoothie configuration
+        // This ships control right back to Python, completely avoiding async JS loops!
+        window.location.href = `/checkout/menu/customize?smoothie_id=${selectedSmoothieId}`;
+    }
+
+    // Automatically restore the expanded card view on page reload if an error context exists
+    document.addEventListener("DOMContentLoaded", function () {
+        const selectMenu = document.getElementById("smoothie-select");
+        if (selectMenu && selectMenu.value) {
+            console.log("🔄 Restoring view context for failed smoothie ID:", selectMenu.value);
+            // Executes the existing layout function instantly using the sticky dropdown value
+            switchActiveSmoothieCardView(selectMenu.value);
+        }
+
+    });
+
+</script>
+{% endblock %}

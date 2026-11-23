@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Thank You! - Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<!-- Optional: Auto-redirect back to the start menu after 8 seconds -->
+<meta http-equiv="refresh" content="10;url={{ url_for('view_menu') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <div class="card shadow-lg p-5 mx-auto" style="max-width: 600px; border-radius: 15px;">
+        <h1 class="display-4 text-success mb-4">🥤 Order Placed!</h1>
+        <p class="lead fw-semibold text-secondary">
+            Your order number is: {{ order_id }}
+        </p>
+        <p class="lead fw-semibold text-secondary">
+            Thank you for your order, it will be served shortly.
+        </p>
+        <hr class="my-4">
+        <p class="text-muted align-items-center">This screen will automatically return to</p>
+        <p class="text-muted align-items-center"> the menu for the next order.</p>
+        <a href="{{ url_for('view_menu') }}" class="btn btn-primary btn-lg mt-3 fw-bold">
+            Order More Smoothies
+        </a>
+    </div>
+</div>
+{% endblock %}

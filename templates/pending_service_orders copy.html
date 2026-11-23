@@ -1,0 +1,87 @@
+<!-- pending_service_orders.html -->
+{% extends "base.html" %}
+
+{% block title %}🥤 Production Kitchen Queue - Oasis Smoothie Shop{% endblock %}
+
+{% block extra_css %}
+<!-- Automatically auto-refresh every 15 seconds to look for newly paid orders -->
+<meta http-equiv="refresh" content="15">
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-4">
+    <!-- Payment Terminal Stats -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h1 class="h2 mb-0 text-dark">🥤Pending Service Queue</h1>
+            <p class="text-muted">Blending Station Live Monitor</p>
+        </div>
+        <div class="text-end">
+            <p class="badge fs-5 text-black shadow-sm fw-semibold p-3" style="background-color:greenyellow;">
+                Active Blends: {{ orders|length }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Orders Layout Grid -->
+    {% if orders %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for order in orders %}
+                <div class="col mb-3" >
+                    <div class="card h-100 shadow-sm order-card border-light-subtle">
+                        <!-- Order Header -->
+                        <div class="card-header text-black d-flex justify-content-between align-items-center border-0 pt-3 pb-3 rounded-top" style="background-color:lightskyblue;">
+                            <span class="fw-semibold fs-5">Order #{{ order.id }}</span>
+                            <span class="badge fs-6 text-black border border-light-subtle" style="background-color:lightsalmon;">
+                                {{ order.created_at.strftime('%I:%M %p') if order.created_at else 'Just Now' }}
+                            </span>
+                        </div>
+                        
+                        <!-- Order Body Details -->
+                        <!-- Scrollable order content inside the card, with button to expand the order -->
+                        <div class="card-body bg-white overflow-auto" style="height:100px;">
+                            <!-- Loop through the individual items belong to THIS specific order's ticket -->
+                            {% for item in order.kitchen_ticket['items'] %}
+                                <div class="pb-2 {% if not loop.last %} border-bottom mb-2 {% endif %}">
+                                    <h5 class="fw-semibold mb-1" style="color:darkRed;">
+                                        🥤 {{ item['smoothie'].name }} 
+                                    </h5>
+                                </div>    
+                                <!-- Clear adjustments for modifications -->
+                                <div class="text-start ps-3 mb-1 fs-5">
+                                    {% if item['modifications'] %}
+                                        {% for mod_name in item['modifications'] %}
+                                            <!-- mod_name is a direct string (e.g., 'Oat Milk') -->
+                                            <p class="text-danger fw-semibold my-0">{{ mod_name }}</p>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted fst-italic fs-6 my-0">Standard recipe formula (No customizations)</p>
+                                    {% endif %}
+                                </div>
+                                
+                            {% endfor %}
+                        </div>
+                        <!-- Order Action Button to Serve the order -->
+                        <div class="card-footer bg-light border-top pb-3 pt-3">
+                            <!-- Form to clear order from kitchen queue and mark served (GET) -->
+                            <form action="{{ url_for('serve_pending_order', order_id=order.id) }}">
+                                <button type="submit" class="btn btn-success w-100 fw-semibold py-3 shadow-sm fs-6">
+                                    EXPAND ORDER
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State Dashboard fallback -->
+        <div class="text-center py-5 my-5">
+            <div class="display-1 text-muted opacity-25 mb-3">🥤</div>
+            <h3 class="text-secondary fw-semibold">Kitchen Queue Clear</h3>
+            <p class="text-muted">No open beverage orders are waiting to be blended right now.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

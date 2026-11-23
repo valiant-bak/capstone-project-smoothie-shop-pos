@@ -1,0 +1,86 @@
+<!-- order_review.html -->
+
+{% extends 'base.html' %}
+
+{% block title %} 🥤Order Review | Oasis Smoothie Shop{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white p-3">
+                <h4 class="mb-0 fw-bold">🥤Smoothie Order Review</h4>
+            </div>
+            <div class="card-body bg-white p-4">
+
+                <!-- Loop through every smoothie package in the cart list -->
+                {% for item in items %}
+                <div class="card mb-4 border-light-subtle shadow-sm p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h5 class="fw-bold text-secondary mb-0">🥤 Item #{{ loop.index }}</h5>
+                        <span class="badge bg-success fs-6">Subtotal: ${{ "%.2f"|format(item.total) }}</span>
+                    </div>
+
+                    <!-- 1. Displaying Selected Base SmoothieDetails -->
+                    <div class="mb-3 border-bottom pb-3">
+                        <span class="text-muted small text-uppercase d-block fw-bold tracking-wider">Smoothie Selection</span>
+                        <h3 class="text-dark fw-bold mb-1">{{ item.smoothie.name }}</h3>
+                        <span class="text-secondary fw-semibold">${{ "%.2f"|format(item.smoothie.base_price) }}</span>
+                    </div>
+
+                    <!-- 2. Selected Modifications Recapping -->
+                    <div class="mb-2">
+                        <span class="text-muted small d-block fw-bold mb-2">Applied Upgrades & Customizations</span>
+                        <ul class="list-group list-group-flush">
+                            {% for mod in item.modifications %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                <span class="text-dark fw-medium">✔️ {{ mod.name }}</span>
+                                <span class="text-muted small">+ ${{ "%.2f"|format(mod.price_change) }}</span>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item px-0 bg-transparent text-muted small fst-italic">Standard formula recipe (No additional adjustments selected)</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Grand Total Component Display (placed below the loop container) -->
+                <div class="matrix-price-panel p-4 text-center bg-light rounded shadow-sm mb-4">
+                    <h3 class="text-dark fw-bold">ORDER GRAND TOTAL</h3>
+                    <h1 class="text-success fw-extrabold display-5">${{ "%.2f"|format(grand_total) }}</h1>
+                </div>
+                
+                <!-- SECURE TRANSACTION FORM ACTION (Handles all items in the cart) -->
+                <!-- <form action="{{ url_for('secure_payment') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/> -->
+
+                <!-- CRITICAL BLUEPRINT HACK: We inject hidden inputs tracking the checked mod array 
+                so when the user clicks submit, the exact list carries over into the POST request -->
+                {% for mod in selected_mods %}
+                <input type="hidden" name="modification_ids" value="{{ mod.id }}">
+                {% endfor %}
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <a href="{{ url_for('view_cart') }}" class="btn btn-success w-100 fw-semibold align-items">
+                            👈 Back to Cart
+                        </a>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <!-- SECURE TRANSACTION FORM ACTION (Handles all items in the cart) -->
+                        <form action="{{ url_for('secure_payment') }}" method="POST">
+                            <!-- Include your security CSRF token here if using Flask-WTF -->
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/> 
+                            <!-- Renders if an Employee/Manager is processing the order directly -->
+                            <button type="submit" class="btn btn-success w-100 fw-bold shadow-sm">
+                                Secure Payment 👉
+                            </button> 
+                        </form>
+                    </div>  
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
