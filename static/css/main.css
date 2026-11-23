@@ -1,0 +1,288 @@
+/* static/css/main.css */
+
+/* 1. DECLARE THE SYSTEM GLOBAL BRAND MATRIX THEME */
+:root {
+    --oasis-primary-dark: #212529;
+    /* Deep obsidian black */
+    --oasis-accent-success: #198754;
+    /* Fresh matrix fc green */
+    --oasis-border-light: #72a5d7;
+    /* Clean divider gray */
+    --oasis-glow-subtle: rgba(25, 135, 84, 0.08);
+    /* Transparent layout tint */
+    --oasis-matrix-orange: lightsalmon;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+    /* background-color: var(--oasis-border-light) !important;  */
+    background-color: beige !important;
+    font-family: 'Segoe UI', Verdana, Tahoma, Geneva, Verdana, sans-serif;
+    padding: 0 !important;
+    margin: 0 !important;
+    align-content:center;
+}
+
+p {
+    font-size: 1.5rem;
+}
+
+table {
+    width: 100%;
+    border-collapse:
+        collapse;
+    margin-top: 15px;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #af4c7a;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+nav {
+    font-family: Roboto, Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 1 rem;
+    border-radius: 20px;
+    /* border:2px solid #4ddc3b; */
+    /* background: linear-gradient(135deg, #FAA153 0%, salmon 100%); */
+}
+
+ul li a,
+nav a.nav-link,
+ul li a.nav-link.dropdown-item.active {
+    color: darkgreen !important;
+    font-size: 1rem;
+    font-weight: 500 !important;
+    text-decoration: none;
+    border-radius: 20px;
+}
+
+/* The style applied when the link is active */
+ul li a.active,
+nav a.active,
+ul li a.nav-link.dropdown-item.active {
+    color: darkred !important;
+    font-weight: 550 !important;
+    background-color: yellow!important;
+    /* border-bottom: 2px solid blue; */
+}
+
+ul li a:hover,
+nav a:hover,
+a.dropdown-item:hover,
+a.dropdown-item:active {
+    background-color: yellow!important;
+    color:darkred;
+}
+
+a span.logo {
+    color: #D53C6F;
+}
+
+a span.logo:hover {
+    color: black;
+}
+
+button, .button {
+    background-color: lightsalmon !important;
+    color: darkgreen;
+}
+
+button:hover,
+.btn:hover {
+    background-color: lightseagreen !important;
+}
+
+.btn {
+    background-color: peachpuff;
+    color: darkgreen;
+}
+
+span.badge {
+    font-size: 1.1em !important;
+    color: black;
+    background-color: red!important;
+}
+
+
+/* INVENTORY FORMS (inventory.html and inventory-dashboard.html */
+.cell-input {
+    width: 80px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* New style for the first column */
+th:first-child,
+td:first-child {
+  width: 200px;
+}
+.out-of-stock { 
+    background-color:orangered!important; 
+    color:white;                     
+}
+.low-stock { 
+    background-color: orange !important;
+    color:white;                     
+}
+.ignore-stock {
+    background-color:grey;
+    color: white;
+}
+
+
+#smoothie_selector {
+  scroll-margin-top: 100px; 
+}
+
+footer {
+    background-color: papayawhip !important;
+    text-align: center;
+}
+
+
+footer p {
+    font-size: 1rem;
+    padding: 10px;
+}
+
+.container {
+    align-content: center;
+    align-items: center;
+
+}
+
+div.card {
+    max-width: 800px !important;
+    align-content: center;
+}
+
+select.form-select {
+    background-color: lightgreen;
+}
+
+select:hover,
+select.form-select:hover {
+    background-color: lavender;
+    color: green;
+}
+
+select#smoothie-select.form-select option:hover,
+select#smoothie-select.form-select option:focus {
+    /* Changes background color on hover */
+    color: peachpuff;
+
+}
+
+input.form-check-input {
+    background-color: lightgreen !important;
+    color: darkred;
+
+}
+
+.form-check-input:checked[type=checkbox] {
+    color: darkred !important;
+}
+
+.matrix-container {
+    border: 2px solid var(--oasis-matrix-dark);
+    border-radius: 10px;
+    background-color: papayawhip;
+    overflow: hidden;
+}
+
+.matrix-header {
+    /* background-color: var(--oasis-matrix-orange); */
+    background-color: lightgreen;
+    color: darkred;
+    padding: 1.5rem;
+}
+
+.matrix-row {
+    border-bottom: 1px solid var(--oasis-matrix-border);
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    background-color: papayawhip;
+    /* border-radius: 10px; */
+}
+
+.matrix-row:last-child {
+    border-bottom: none;
+}
+
+/* Highlights the live pricing calculation window */
+.matrix-price-panel {
+    background-color: papayawhip;
+    /* background-color: var(--oasis-matrix-orange); */
+    border: 2px solid var(--oasis-matrix-success);
+    /* border-radius: 10px; */
+}
+
+
+.order-card {
+    border-left: 5px solid lightgreen;
+    /* Blue border for pending orders */
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+/* CART DISPLAY for cart.html and payment_confirmation.html
+ /* 1. FORCE THE CART MAIN BODY TO CENTER UNIFORMLY AND CONTROL THE WIDTH */
+    main,
+    .content-wrapper,
+    #content-block {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 80vh;
+        padding: 2rem 0;
+    }
+
+    /* Sets a clean, uniform card layout container constraint size across all pages */
+    .container.my-5,
+    .card.shadow-sm {
+        width: 100% !important;
+        max-width: 600px !important;
+        /* Forces uniform size similar to col-md-8 / col-lg-6 */
+        margin-left: auto !important;
+        margin-right: auto !important;
+        display: block !important;
+    }
+
+
+    /* 2. FIX THE BLOCKED ROW DISPLAY TO ALIGN ITEMS SIDE-BY-SIDE INSTEAD */
+    /* Targets the wrapper surrounding each individual smoothie item loop */
+    .card.shadow-sm>div,
+    .card.shadow-sm form>div {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        width: 100% !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Ensures the right-side details (subtotal & delete text/button) line up against the right border */
+    .card.shadow-sm .text-end,
+    .card.shadow-sm div> :last-child {
+        text-align: center !important;
+        /* white-space: nowrap !important; */
+    }
