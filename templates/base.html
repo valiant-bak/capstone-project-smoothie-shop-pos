@@ -48,7 +48,7 @@
             <ul class="navbar-nav ms-auto pe-1 py-2 py-lg-0">
 
                 <!-------------------------------------------------------------->
-                <!-- NO AUTHENTICATION REQUIRED HERE (ALL USERS ARE WELCOME)                        -->
+                <!-- NO AUTHENTICATION REQUIRED HERE (ALL USERS ARE WELCOME)  -->                      
                 <!-------------------------------------------------------------->
                 <li class="nav-item">
                     <!-- If the current route is the 'home' function, apply the 'active' class -->
@@ -65,7 +65,7 @@
                 <!-- DYNAMIC LINKS BASED ON USER AUTHENTICATION AND FOLES                      -->
                 <!------------------------------------------------------------------------------->
 
-                {% if current_user.is_authenticated %}:
+                {% if current_user.is_authenticated %}
 
                     <!--------------------------------------------------------------------->
                     <!-- THE USER IS AN AUTHENTICATED EMPLOYEE (logged-in)                     -->
@@ -101,7 +101,7 @@
                         </ul>
                     </li>
 
-                    {% if current_user.role == 'manager' %}:
+                    {% if current_user.role == 'manager' %}
 
                         <!-------------------------------------------------------------->
                         <!-- THE AUTHENTICATED EMPLOYEE HAS A MANAGER ROLE            -->
@@ -161,7 +161,7 @@
                 {% else %}
 
                     <!-------------------------------------------------------------->
-                    <!-- THE USER HAS NOT BENN AUTHENTICATED YET             -->
+                    <!-- THE USER HAS NOT BENN AUTHENTICATED YET                  -->
                     <!-------------------------------------------------------------->
 
                     <!-- Offer the Login screen to the user -->

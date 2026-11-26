@@ -7,11 +7,14 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid w-100 p-0 my-0">
-    <div class="card align-items-center w-100 w-lg-50 mx-auto">
 
-        <div class="row justify-content-center align-items-center" style="min-height:80vh;background-color:beige;">
-            <div class="col-12 col-md-8 col-lg-6">
+<div class="container-fluid p-0 my-0 mx-auto" style="max-width: 900px;">
+    <!-- Removed w-lg-50 so the card uses the full 900px width -->
+    <div class="card align-items-center w-100 mx-auto border-0">
+
+        <div class="row justify-content-center align-items-center w-100 m-0" style="min-height:80vh;background-color:beige;">
+            <!-- Changed col-md-8 col-lg-6 to col-md-10 col-lg-9 to widen the receipt -->
+            <div class="col-12 col-md-10 col-lg-9 my-4">
                 <div class="shadow-lg border-0 rounded-3 overflow-hidden">
 
                     <!-- Dynamic Success Indicator Header Banner -->
@@ -19,21 +22,21 @@
                         <h2 class="fw-bold text-center my-0">Payment Receipt</h2>
                     </div>
 
-                    <div class="card-body bg-white p-3">
+                    <div class="card-body bg-white p-4">
                     
-                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-2 border border-light-subtle">
-
-                            <p class="text-black text-uppercase d-block fw-semibold" style="font-size: 1em;">
+                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border border-light-subtle">
+                            <!-- Added mb-0 for better vertical centering -->
+                            <p class="text-black text-uppercase d-block fw-semibold mb-0" style="font-size: 1em;">
                                 ORDER NUMBER: {{ order_id }}
                             </p>
                             <div class="text-end">
                                 <span class="text-secondary d-block text-small fw-semibold">Gateway Provider</span>
-                                <span class="yellow-badge text-small" style="background-color:rgb(235, 235, 35)!important;">PayPal Secure</span>
+                                <span class="yellow-badge text-small px-2 py-1 rounded" style="background-color:rgb(235, 235, 35)!important;">PayPal Secure</span>
                             </div>
                         </div> 
                          
                         {% for item in items %}
-                            <div class="mb-2 border-light-subtle shadow-sm p-3 bg-light position-relative">
+                            <div class="mb-3 border border-light-subtle rounded shadow-sm p-3 bg-light position-relative">
                                 <div class="container g-0 mb-2 bg-light">
 
                                     <div class="mb-2 align-items-start">
@@ -46,22 +49,15 @@
                                     </div>
                                     <!-- Unified Recipe Item List -->
                                     <div class="row mb-2 small align-items-start">
-                                        <div class="col-9 ps-3 text-muted">
+                                        <div class="col-10 ps-3 text-muted">
                                             {% set names_list = [] %}
-
-                                            {# Gather standard ingredients #}
                                             {% for ing in item.recipe_ingredients %}
                                                 {% set _ = names_list.append(ing.name) %}
                                             {% endfor %}
-
-                                            {# Gather swapped/substituted ingredients #}
                                             {% for ing in item.sub_ingredients %}
                                                 {% set _ = names_list.append(ing.name) %}
                                             {% endfor %}
-
-                                            {# Print nicely formatted, comma-separated list #}
                                             {{ names_list|join(', ') }}
-
                                         </div>
                                     </div>
                                 </div> 
@@ -79,34 +75,33 @@
                                     {% endif %}
                                 </div>
                                 
-                                <div class="text-md-end d-flex flex-md-column align-items-end h-100 fw-bold">
-                                    <h6 style="font-family:monospace; font-weight:600;">Subtotal: ${{ "%.2f"|format(item.smoothie_price) }}</h6>
+                                <div class="text-md-end d-flex flex-md-column align-items-end h-100 fw-bold mt-2">
+                                    <h6 class="mb-0" style="font-family:monospace; font-weight:600;">Subtotal: ${{ "%.2f"|format(item.smoothie_price) }}</h6>
                                 </div>
                             </div>
                         {% endfor %}
                         
                         <!-- Order Total -->
-                        <div class="mb-2 border-light-subtle shadow-sm p-3 bg-light position-relative">
-                            <div class="container g-0 mb-2 bg-light">
+                        <div class="mb-3 border border-light-subtle rounded shadow-sm p-3 bg-light position-relative">
+                            <div class="container g-0 bg-light">
                                 <div class="row align-content-between g-2 text-muted small mb-0">
-                                    <h5 class="col-9 text-start fw-bold text-dark">ORDER TOTAL:</h5>
-                                    <h5 class="col fw-bold text-dark text-end" style="font-family:monospace;">${{ "%.2f"|format(grand_total) }}</h5>
+                                    <h5 class="col-9 text-start fw-bold text-dark mb-0">ORDER TOTAL:</h5>
+                                    <h5 class="col fw-bold text-dark text-end mb-0" style="font-family:monospace;">${{ "%.2f"|format(grand_total) }}</h5>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Layout Flow Actions Navigation Row -->
-                        <div class="container">
+                        <div class="container px-0">
                             <div class="row align-content-between g-3">
-                                <div class="col mb-3">
+                                <div class="col mb-2">
                                     <a href="{{ url_for('view_pending_payment_orders') }}"
                                         class="btn btn-success fs-6 btn-lg w-100 py-3 fw-semibold shadow-sm">
                                         ⮜ PENDING PAYMENT ORDERS
                                     </a>
                                 </div>
-                                <div class="col mb-3">
-                                    <form action="{{ url_for('serve_order', order_id=order_id) }}" class="m-0">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <div class="col mb-2">
+                                    <form action="{{ url_for('serve_order', order_id=order_id, source=source) }}" class="m-0">
                                         <button type="submit"
                                             class="btn btn-success btn-lg w-100 py-3 fw-semibold fs-6 shadow-sm">
                                             🥤SERVE THIS SMOOTHIE ORDER ⮞
@@ -121,5 +116,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

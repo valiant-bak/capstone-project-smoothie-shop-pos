@@ -10,10 +10,11 @@
 import re, os, secrets, logging, uuid, enum, copy
 from datetime import datetime
 
-from flask import Flask, flash, jsonify, redirect, render_template, request, url_for, session, current_app
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for, Response, session, current_app
 from flask_login import LoginManager, current_user, UserMixin, login_required, login_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy.orm import joinedload
 from sqlalchemy import select
@@ -24,8 +25,12 @@ from models import *
 from seed_db import seed_initial_data 
 from sqlalchemy.exc import SQLAlchemyError     
 
-
 app = Flask(__name__)
+
+# SECURITY: HTTPS - ProxyFix to always generate a secure https: url
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 
 # 1. SECURITY CONFIGURATION
 
@@ -125,6 +130,24 @@ def home():
     """Public customer facing home page showing available smoothie options."""
     smoothies = Smoothie.query.all()
     return render_template('index.html', smoothies=smoothies)
+
+from flask import Response, url_for
+
+
+@app.route('/sitemap.xml', methods=['GET'])
+def sitemap():
+    pages = [
+        url_for('index', _external=True),
+        url_for('view_menu', _external=True),
+    ]
+    xml_items = "".join(f"<url><loc>{url}</loc></url>" for url in pages)
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://sitemaps.org">'
+        f'{xml_items}'
+        '</urlset>'
+    )
+    return Response(xml, mimetype='application/xml')
 
 
 # 6.2. STAFF AUTHENTICATION ENTRIES
@@ -643,23 +666,30 @@ def check_stock_quantities_vs_demand(required_ingredients):
 
         projected_stock = ing_stock - ing_amount_needed
 
-        # PRINT A TABLE ROW SHOWING THE INGREDIENTS DATA
+        # PRINT A TABLE ROW SHOWING THE INGREDIENTS DATA AND THE STOCK DEFICIENCIES
         
-        if ing_id in disabled_ings_list:
-            continue
+        if ing_id in disabled_ings_list: continue
 
         if ing_amount_needed == 0:
             disabled_ings_list.append(ing_id) # out_of_stock or insufficient_stop already accounted for
             print(f"| {GREEN}{ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} {RESET}|")
+        
         elif ing_stock <= ing_min_stock:
             out_of_stock_list.append(ing_id)
             print(f"| {RED}{ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} {RESET}|")
+        
         elif ing_amount_needed > ing_stock - ing_min_stock:
             insufficient_stock_list.append(ing_id)
-            print(f"| {ORANGE}{ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} {RESET}|")
+            print(f"| {RED}{ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} {RESET}|")
+        
         elif projected_stock < ing_min_stock:
             insufficient_stock_list.append(ing_id)
+            print(f"| {RED}{ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} {RESET}|")     
+        
+        elif ing_stock <= ing_reorder_stock:
+            order_soon_list.append(ing_id)
             print(f"| {ORANGE}{ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} {RESET}|")     
+        
         else: # no stock deficiencies
             print(f"| {ing_id:<21} | {ing_amount_needed:<13} | {ing_stock:<13} | {ing_min_stock:<13} |")
       
@@ -734,63 +764,6 @@ def verify_inventory(session_cart):
     #     'order_soon_list': order_soon_list
     # }
    
-    # # Unpack the inventory check lists
-    # has_hard_stop = inventory_check['has_hard_stop']
-    # disabled_ings_list = inventory_check['disabled_ings_list']
-    # ing_stock = inventory_check['ing_stock']
-    # out_of_stock_list = inventory_check['out_of_stock_list']
-    # insufficient_stock_list = inventory_check['insufficient_stock_list']
-    # order_soon_list = inventory_check['order_soon_list']
-
-
-    # print(f"ing_stock: {ing_stock}")
-    # # Categorize the stock deficiencies
-    # for ing_id, ing_amount_needed, ing_stock, ing_reorder_stock, ing_min_stock in ing_stock:
-
-    #     projected_stock = ing_stock - ing_amount_needed
-
-    #     if ing_amount_needed == 0: # the stock issue was adresed and the ingredient is not tracked
-    #         if ing_id not in disabled_ings_list:
-    #             disabled_ings_list.append(ing_id)
-    #             print(f"Ingredient {ing_id} has been added to the disabled_ings_list: {disabled_ings_list}")
-    #         continue
-
-    #     elif ing_stock <= ing_min_stock:
-    #         if ing_id not in out_of_stock_list:
-    #             out_of_stock_list.append(ing_id)
-    #             print(f"Ingredient {ing_id} has been added to the out_of_stock_list: {out_of_stock_list}")
-    #             continue
-
-    #     elif ing_amount_needed > ing_stock - ing_min_stock:
-    #         if ing_id not in insufficient_stock_list:
-    #             insufficient_stock_list.append(ing_id)
-    #             print(f"Ingredient {ing_id} has been added to the insufficient_stock_list: {insufficient_stock_list}")
-    #             continue
-
-    #     elif projected_stock < ing_min_stock:
-    #          if ing_id not in insufficient_stock_list:
-    #             insufficient_stock_list.append(ing_id)
-    #             print(f"Ingredient {ing_id} has been added to the insufficient_stock_list: {insufficient_stock_list}")
-    #             continue
-
-    #     elif ing_amount_needed > ing_reorder_stock - ing_min_stock:
-    #         if ing_id not in order_soon_list:
-    #             order_soon_list.append(ing_id)
-    #             print(f"Ingredient {ing_id} has been added to the reorder_soon_list: {order_soon_list}")
-    #             continue
-
-    # inventory_report = {
-       
-    #     'has_hard_stop': has_hard_stop,
-    #     'disabled_ings_ist': disabled_ings_list,
-    #     'ing_stock': ing_stock,
-    #     'out_of_stock_list': out_of_stock_list,
-    #     'insufficient_stock': insufficient_stock_list,
-    #     'order_soon_list': order_soon_list
-    # }
-
-    
-
 
 def report_inventory_status(inventory_report):
     """
@@ -845,9 +818,6 @@ def report_inventory_status(inventory_report):
     return
 
 
-
-
-
 def calculate_cart_total(session_cart):
     grand_total = 0.00
     new_items = []
@@ -865,6 +835,56 @@ def calculate_cart_total(session_cart):
     grand_total = sum(item.get('smoothie_price', 0.0) for item in new_items)
   
     return grand_total
+
+
+def build_receipt_from_db(order_id):
+    order_items = (
+        OrderItem.query
+        .filter_by(order_id=order_id)
+        .order_by(OrderItem.smoothie_number.asc(), OrderItem.id.asc())
+        .all()
+    )
+
+    grouped_items = {}
+
+    for row in order_items:
+        # Skip removed ingredients
+        if not row.add_ingredient or row.ingredient_quantity <= 0:
+            continue
+
+        num = row.smoothie_number
+        if num not in grouped_items:
+            # Collect all add-on ingredient IDs linked to this smoothie
+            addon_ids = {addon.ingredient_id for addon in row.smoothie.addon_items}
+
+            grouped_items[num] = {
+                'smoothie_number': num,
+                'smoothie_name': row.smoothie.name,
+                'smoothie_base_price': row.smoothie.base_price,
+                'smoothie_price': row.smoothie_price,
+                'recipe_ingredients': [],
+                'sub_ingredients': [],
+                'addon_ingredients': [],
+                '_addon_ids': addon_ids
+            }
+
+        ing = row.ingredient
+
+        # Populate addon_ingredients with name & cost so the template renders the breakdown
+        if row.ingredient_id in grouped_items[num]['_addon_ids']:
+            grouped_items[num]['addon_ingredients'].append({
+                'name': ing.name,
+                'cost': round((ing.cost or 0.0) * row.ingredient_quantity, 2)
+            })
+        else:
+            grouped_items[num]['recipe_ingredients'].append({
+                'name': ing.name
+            })
+
+    items = list(grouped_items.values())
+    grand_total = round(sum(item['smoothie_price'] for item in items), 2)
+
+    return items, grand_total
 
 
 # =========================================================================
@@ -1285,10 +1305,10 @@ def process_order():
         # Pair each numbered display item with its corresponding raw session_cart item
         for cart_item, raw_item in zip(cart_items, session_cart):
 
-            print("====================================================================")
-            print(f"cart_item: {cart_item}, cart_itemst: {cart_items}")
-            print("====================================================================")
-            print(f"raw_item: {raw_item}, session_cart: {session_cart}\n")
+            # print("====================================================================")
+            # print(f"cart_item: {cart_item}, cart_items: {cart_items}")
+            # print("====================================================================")
+            # print(f"raw_item: {raw_item}, session_cart: {session_cart}\n")
 
 
             if raw_item.get('error_flag'): continue
@@ -1396,7 +1416,11 @@ def process_order():
         
         # 9.2. Dismiss the customer or route staff to process the payment
         if is_staff:
-            return redirect(url_for('process_payment', order_id=new_order.id))
+            return redirect(
+                url_for('process_payment', 
+                order_id=new_order.id,
+                source='pos_line' # order is coming from the production (point-of-service) line
+            ))
        
         return render_template(
             'order_confirmation.html', 
@@ -1442,18 +1466,32 @@ def process_payment(order_id):
     grand_total = round(staged_order.total_price, 2)
 
     if request.method == 'GET':
+
+        source = request.args.get('source', 'pos_line')  # Reads URL query from the route process_order
+
         # Bring the PayPal payment screen to the customer
-        return render_template('order_payment.html', order_id=staged_order.id, grand_total=grand_total)
+        return render_template(
+            'order_secure_payment.html', 
+            order_id=staged_order.id, 
+            grand_total=grand_total,
+            source=source 
+        )
        
     if request.method == 'POST':
+
+        source = request.form.get('source', 'pos_line')  # Reads hidden form from order_secure_payment.html
 
         try:
             # Update the payment status as PAID
             staged_order.payment_status = PaymentStatus.PAID
             db.session.commit()
             flash(f"🎉 Payment successful! Charged ${grand_total:.2f}. Order #{staged_order.id} sent to kitchen queue.", "success")
-            return redirect(url_for('confirm_payment', order_id=staged_order.id))
-        
+            return redirect(
+                url_for('confirm_payment', 
+                order_id=staged_order.id,
+                source=source
+            ))
+            
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Payment Processing Failure: {str(e)}")
@@ -1469,59 +1507,11 @@ def process_payment(order_id):
             db.session.commit()
 
             # Redirect to the PayPal order payment form
-            return redirect(url_for('process_payment', order_id=staged_order.id))
-
-
-
-def build_receipt_from_db(order_id):
-    order_items = (
-        OrderItem.query
-        .filter_by(order_id=order_id)
-        .order_by(OrderItem.smoothie_number.asc(), OrderItem.id.asc())
-        .all()
-    )
-
-    grouped_items = {}
-
-    for row in order_items:
-        # Skip removed ingredients
-        if not row.add_ingredient or row.ingredient_quantity <= 0:
-            continue
-
-        num = row.smoothie_number
-        if num not in grouped_items:
-            # Collect all add-on ingredient IDs linked to this smoothie
-            addon_ids = {addon.ingredient_id for addon in row.smoothie.addon_items}
-
-            grouped_items[num] = {
-                'smoothie_number': num,
-                'smoothie_name': row.smoothie.name,
-                'smoothie_base_price': row.smoothie.base_price,
-                'smoothie_price': row.smoothie_price,
-                'recipe_ingredients': [],
-                'sub_ingredients': [],
-                'addon_ingredients': [],
-                '_addon_ids': addon_ids
-            }
-
-        ing = row.ingredient
-
-        # Populate addon_ingredients with name & cost so the template renders the breakdown
-        if row.ingredient_id in grouped_items[num]['_addon_ids']:
-            grouped_items[num]['addon_ingredients'].append({
-                'name': ing.name,
-                'cost': round((ing.cost or 0.0) * row.ingredient_quantity, 2)
-            })
-        else:
-            grouped_items[num]['recipe_ingredients'].append({
-                'name': ing.name
-            })
-
-    items = list(grouped_items.values())
-    grand_total = round(sum(item['smoothie_price'] for item in items), 2)
-
-    return items, grand_total
-
+            return redirect(
+                url_for('process_payment', 
+                order_id=staged_order.id,
+                source=source
+            ))  
 
 
 @app.route('/checkout/payment_confirmation/<int:order_id>', methods=['GET'])
@@ -1533,6 +1523,9 @@ def confirm_payment(order_id):
     # SECURITY: AUTHENTICATION
     if current_user.role not in ['employee', 'manager']: abort(403)
 
+    # Read where this payment originated ('pos_line' or 'pending_service')
+    source = request.args.get('source', 'pos_line')
+
     # Clear the staged_cart as all the needed data has been saved in the Database
     session.pop('staged_cart', None)
 
@@ -1541,13 +1534,20 @@ def confirm_payment(order_id):
         flash("Order not found.", "danger")
         return redirect(url_for('view_pending_payment_orders'))
 
+    # SECURITY GUARD: DATA INTEGRITY. Prevent access if payment was not completed
+    if order.payment_status != PaymentStatus.PAID:
+        flash("Payment has not been completed for this order.", "warning")
+        return redirect(url_for('process_payment', order_id=order.id, source=source))
+
+    # POS Line workers see the confirmation receipt and continue to the Service loop
     items, grand_total = build_receipt_from_db(order_id)
 
     return render_template(
         'payment_confirmation.html',
         order_id=order_id,
         items=items,
-        grand_total=grand_total
+        grand_total=grand_total,
+        source=source
     )
 
 
@@ -1560,15 +1560,14 @@ def serve_order(order_id):
     # Safety Check: Ensure only authorized staff can mark an order as served
     if current_user.role not in ['employee', 'manager']: abort(403)
 
-    # staged_cart = session['staged_cart']
-
     # Fetch staged_order and grand_total ONCE at the top so both GET and POST can use them
     staged_order = db.session.get(Order, order_id)
+
     # SECURITY: FAIL FAST and redierct if the order is not found in the Database
     if not staged_order:
         flash("No active order found. Please try again", "danger")
         print(f"No active order found for staged_order_id: {staged_order.id}")
-        return redirect(url_for('view_Cart'))
+        return redirect(url_for('view_pending_service_orders'))
 
     # 1. Query the Line Items in SQLAlchemy
     stmt = (
@@ -1601,17 +1600,21 @@ def serve_order(order_id):
             'add_ingredient': item.add_ingredient
         })
 
-    if request.method == 'GET':
+    if request.method == 'GET': 
 
-        # print(f"ticket_smoothies: {ticket_smoothies}")
+        source = request.args.get('source', 'pos_line')
 
         return render_template(
             'order_service_ticket.html',
             order_id=order_id, 
-            ticket_smoothies=ticket_smoothies, # dict
-            grand_total=staged_order.total_price)
+            ticket_smoothies=ticket_smoothies, 
+            grand_total=staged_order.total_price,
+            source=source
+        )
 
     if request.method == 'POST':
+
+        source = request.args.get('source', 'pos_line')
 
         try:
             # Update the payment status as PAID
@@ -1619,11 +1622,13 @@ def serve_order(order_id):
             db.session.commit()
             flash(f"🎉 Service successful! Order #{staged_order.id} complete!", "success")
 
-            return render_template(
-                'service_confirmation.html',
+            return redirect(
+                url_for('confirm_service',
                 order_id=order_id, 
                 ticket_smoothies=ticket_smoothies, # dict
-                grand_total=staged_order.total_price)
+                grand_total=staged_order.total_price,
+                source=source
+            ))
         
         except Exception as e:
             db.session.rollback()
@@ -1634,8 +1639,7 @@ def serve_order(order_id):
             # Fetch a fresh version of staged_order aftet the db.session.rollback()
             staged_order = db.session.get(Order, order_id)
 
-            # Redirect to the PayPal order payment form
-            return redirect(url_for('serve_order', order_id=order_id))
+            return redirect(url_for('serve_order', order_id=order_id, source=source))
    
 
 @app.route('/checkout/service_confirmation/<int:order_id>')
@@ -1645,17 +1649,30 @@ def confirm_service(order_id):
 
     if current_user.role not in ['employee', 'manager']: abort(403)
 
-    # staged_cart = session['staged_cart']
+    # Read where this service request originated ('checkout' or 'pending_payment')
+    source = request.args.get('source', 'pos_line')
 
-    # Fetch staged_order and grand_total ONCE at the top so both GET and POST can use them
-    staged_order = db.session.get(Order, order_id)
-    # SECURITY: FAIL FAST and redierct if the order is not found in the Database
-    if not staged_order:
-        flash("No active order found. Please try again", "danger")
-        print(f"No active order found for staged_order_id: {staged_order.id}")
-        return redirect(url_for('view_Cart'))
+    order = db.session.get(Order, order_id)
+    if not order:
+        flash("Order not found.", "danger")
+        return redirect(url_for('view_pending_service_orders'))
 
-    served_items, grand_total = process_cart_items(staged_cart)
+    # SECURITY GUARD: DATA INTEGRITY. Prevent access if payment was not completed
+    if order.payment_status != PaymentStatus.PAID:
+        flash("Payment has not been completed for this order.", "warning")
+        return redirect(url_for('process_payment', order_id=order.id, source=source))
+
+    # SECURITY GUARD: DATA INTEGRITY. Prevent access if service was not completed
+    if order.service_status != ServiceStatus.SERVED:
+        flash("Service has not been completed for this order.", "warning")
+        return redirect(url_for('serve_order', order_id=order.id, source=source))
+
+    # STATION DECISION: Service Station orders return directly to the service queue
+    if source == 'pending_service':
+        return redirect(url_for('view_pending_service_orders'))
+
+    # POS Line workers see the confirmation receipt and continue to the Service loop
+    items, grand_total = build_receipt_from_db(order_id)
 
     # PURCHASE TRANSACTION COMPLETE!
     # Reset it back to a clean, empty list
@@ -1666,8 +1683,11 @@ def confirm_service(order_id):
         'service_confirmation.html', 
         order_id=order_id, 
         grand_total=grand_total,
-        items=served_items
+        items=items,
+        source=source
     )
+
+
 # ------------------------------------------------------------------------------------
 # GET AND PROCESS TICKETS BY ORDER ID, accessing the DB tables: order and order_item
 # ------------------------------------------------------------------------------------
@@ -1687,7 +1707,6 @@ def view_pending_payment_orders():
     return render_template ('pending_payment_orders.html', orders=pending_payment_orders)
 
 
-
 @app.route('/orders/pending-service', methods=['GET'])
 @login_required
 def view_pending_service_orders():
@@ -1705,38 +1724,99 @@ def view_pending_service_orders():
     return render_template ('pending_service_orders.html', orders=pending_service_orders)
 
 
-# @app.route('/orders/find-order/<int:order_id>', methods=['GET'])
-# @login_required
-# def find_order(order_id):
-#     order = Order.query.get_or_404(order_id)
-#     payment_status = order.payment_status
-#     service_status = order.service_status
+@app.route('/orders/find-order', methods=['GET'])
+@login_required
+def find_order():
+    """
+    Search functionality & Order Status Report:
+    Allows authenticated staff to search for an order by Order ID or filter by
+    payment/service status, displaying the itemized receipt and next-step actions.
+    """
 
-#     # 1. Generate the ticket dictionary for order id
-#     ticket = generate_service_ticket(order_id)
+    if current_user.role not in ['employee', 'manager']: abort(403)
 
-#     # 2. Extract the items list
-#     items_list = ticket['items']
+    # =========================================================================
+    # STEP 1: READ SEARCH QUERY PARAMETERS (GET Request - Read-Only Lookup)
+    # =========================================================================
+    raw_order_id = request.args.get('order_id', '').strip()
+    status_filter = request.args.get('status_filter', '').strip()
 
-#     # 3. Loop through each individual item dictionary
-#     for item in items_list:
-#         # Read the basic values using their dictionary keys
-#         # qty = item['quantity']
-#         smoothie_name = item['smoothie'].name
-#         mods = item['modifications']
-#         if mods:
-#             print(f"modifications: {mods}")
-#             for mod in mods:
-#                 print(f"  -> MODIFICATION: {mod}")
-#         else:
-#             print("  -> (Standard Recipe (No Customizations)")
-    
-    # return render_template(
-    #     'ticket_search_results.html', 
-    #     order_id=order_id, 
-    #     ticket_list=items_list
-    # )
+    searched_order = None
+    receipt_items = []
+    grand_total = 0.0
+    matching_orders = []
+    search_performed = bool(raw_order_id or status_filter)
 
+    # =========================================================================
+    # STEP 2: SEARCH BY SPECIFIC ORDER ID (Exact Receipt + Next-Step Lookup)
+    # =========================================================================
+    if raw_order_id:
+        # SECURITY: INPUT VALIDATION - Ensure Order ID is a positive integer
+        if not raw_order_id.isdigit() or int(raw_order_id) <= 0:
+            flash("Please enter a valid numeric Order ID (e.g., 1, 2, 3).", "warning")
+        else:
+            order_id = int(raw_order_id)
+            searched_order = db.session.get(Order, order_id)
+
+            if searched_order:
+                receipt_items, grand_total = build_receipt_from_db(searched_order.id)
+            else:
+                flash(f"No order found matching Order #{order_id}.", "warning")
+
+    # =========================================================================
+    # STEP 3: OPTIONAL SEARCHABLE REPORT FILTER (By Payment or Service Status)
+    # =========================================================================
+    if status_filter:
+        if status_filter == 'pending_payment':
+            matching_orders = (
+                Order.query
+                .filter(Order.payment_status == PaymentStatus.PENDING)
+                .order_by(Order.created_at.desc())
+                .all()
+            )
+        elif status_filter == 'pending_service':
+            matching_orders = (
+                Order.query
+                .filter(
+                    Order.payment_status == PaymentStatus.PAID,
+                    Order.service_status == ServiceStatus.PENDING
+                )
+                .order_by(Order.created_at.desc())
+                .all()
+            )
+        elif status_filter == 'on_hold':
+            matching_orders = (
+                Order.query
+                .filter(
+                    (Order.payment_status == PaymentStatus.ON_HOLD) |
+                    (Order.service_status == ServiceStatus.ON_HOLD)
+                )
+                .order_by(Order.created_at.desc())
+                .all()
+            )
+        elif status_filter == 'completed':
+            matching_orders = (
+                Order.query
+                .filter(
+                    Order.payment_status == PaymentStatus.PAID,
+                    Order.service_status == ServiceStatus.SERVED
+                )
+                .order_by(Order.created_at.desc())
+                .all()
+            )
+
+    return render_template(
+        'order.html',
+        raw_order_id=raw_order_id,
+        status_filter=status_filter,
+        search_performed=search_performed,
+        searched_order=searched_order,
+        receipt_items=receipt_items,
+        grand_total=grand_total,
+        matching_orders=matching_orders,
+        PaymentStatus=PaymentStatus,
+        ServiceStatus=ServiceStatus,
+    )
 
 
 # ==========================================================================
@@ -1897,11 +1977,11 @@ def update_inventory():
                 print(f"{ing.name} is negative! - Added to invalid_current_stock_ings list: {invalid_current_stock_ings}")
                
             if form_reorder_stock < 0: 
-                invalid_new_reorder_stock_ings.append(ing.id) 
+                invalid_reorder_stock_ings.append(ing.id) 
                 print(f"{ing.name} is negative! - Added to invalid_reorder_stock_ings list: {invalid_reorder_stock_ings}")  
                 
             if form_minimum_stock < 0:
-                invalid_new_minimum_stock_ings.append(ing.id) 
+                invalid_minimum_stock_ings.append(ing.id) 
                 print(f"{ing.name} is negative! - Added to invalid_minimum_stock_ings list: {invalid_minimum_stock_ings}")
             
 
@@ -2026,7 +2106,7 @@ def update_inventory():
 
             db.session.commit()
 
-            flash("THE NEW INVENTORY DATA HAS BEEN UPDATED AND SAVED TO THE DATABSE.", "success")
+            flash("THE NEW INVENTORY DATA HAS BEEN UPDATED AND SAVED TO THE DATABASE.", "success")
             print("\nTHE NEW INVENTORY DATA HAS BEEN UPDATED AND SAVED TO THE DATABASE")
 
             # Redirect to display the updated inventory-dashboard.html
@@ -2066,29 +2146,6 @@ def update_inventory():
         stock_exclusions=INVENTORY_EXCLUSIONS
     )
     
-
-# # MANAGER OVERRIDE
-# @app.route('/checkout/manager-override', methods=['POST'])
-# @login_required
-# def manager_override():
-#     """Allows an authenticated manager to temporarily set an override flag in the session."""
-#     # 1. Role Check: Only let verified managers execute this action
-#     if current_user.role != 'manager':
-#         flash("Unauthorized. Only managers can authorize overrides.", "danger")
-#         return redirect(url_for('view_cart'))
-    
-#     # 2. Set the temporary override key in the top-level session dictionary
-#     session['manager_override'] = True
-#     session.modified = True
-    
-#     flash("Manager override activated for this transaction.", "warning")
-#     return redirect(url_for('view_cart'))
-
-# @app.errorhandler(403)
-# def forbidden_error(error):
-#     # Returns a beautiful, styled page instead of a blank white screen
-#     return render_template('errors/403.html'), 403
-
 
 @app.route("/logout")
 @login_required

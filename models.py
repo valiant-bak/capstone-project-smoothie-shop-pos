@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -32,7 +32,6 @@ class ServiceStatus(str, enum.Enum):
 # 2. CORE INVENTORY SCHEMAS
 # =========================================================================
 
-
 # SUPPLIERS TABLE: It links a supplier to the ingredients needed
 class Supplier(db.Model):
     __tablename__ = 'supplier'
@@ -47,7 +46,6 @@ class Supplier(db.Model):
     ingredients = db.relationship('Ingredient', backref='supplier', lazy=True)
 
 
-# INGREDIENTS TABLE
 class Ingredient(db.Model):
     __tablename__ = 'ingredient'
     
@@ -102,7 +100,6 @@ class Ingredient(db.Model):
 # 3. STOREFRONT CONFIGURATION SCHEMAS
 # =========================================================================
 
-
 class Smoothie(db.Model):
     __tablename__ = 'smoothie'
 
@@ -153,8 +150,26 @@ class Smoothie(db.Model):
     def __repr__(self):
         return f"<Smoothie '{self.name}' - Base Price: ${self.base_price:.2f}>"
 
+# ==================================================================================================
+# Three Object-Oriented Programming (OOP) principles: Inheritance, Polymorphism, and Encapsulation. 
+# The abstract base class: SmoothieComponent defines a shared interface (get_customer_charge() 
+# and format_ticket_label()) inherited by three specialized component subclasses: 
+# SmoothieRecipeItem, SmoothieSubItem, and SmoothieAddonItem. 
+# ==================================================================================================
 
-class SmoothieRecipeItem(db.Model):
+class SmoothieComponent(db.Model):
+    """Abstract parent class demonstrating Inheritance & Polymorphism across smoothie components."""
+    
+    __abstract__ = True
+
+    def get_customer_charge(self) -> float:
+        raise NotImplementedError("Subclasses must implement get_customer_charge()")
+
+    def format_ticket_label(self) -> str:
+        return self.ingredient.name if self.ingredient else "Unknown Ingredient"
+
+
+class SmoothieRecipeItem(SmoothieComponent):
     """SECTION 1: Pure default recipe components. Included in base_price.
     - Displayed as pre-selected checkboxes with no quantity/price on screen."""
 
@@ -169,8 +184,14 @@ class SmoothieRecipeItem(db.Model):
     # RELATIONSHIP for easy access
     ingredient = db.relationship("Ingredient")
 
+    def get_customer_charge(self) -> float:
+        return 0.0  # Covered by smoothie base_price
 
-class SmoothieSubItem(db.Model):
+    def format_ticket_label(self) -> str:
+        return f"Recipe: {self.ingredient.name}"
+
+
+class SmoothieSubItem(SmoothieComponent):
     """SECTION 2: Free substitution radio groups.
     - Every option alternative is stored as its own clean row line item.
     - Grouped on the screen via matching 'group_name' keys."""
@@ -191,8 +212,14 @@ class SmoothieSubItem(db.Model):
     # RELATIONSHIP
     ingredient = db.relationship("Ingredient")
 
+    def get_customer_charge(self) -> float:
+        return 0.0  # Included substitution
 
-class SmoothieAddonItem(db.Model):
+    def format_ticket_label(self) -> str:
+        return f"Sub ({self.group_name}): {self.ingredient.name}"
+
+
+class SmoothieAddonItem(SmoothieComponent):
     """SECTION 3: Premium checkbox items with upcharges.
     - Every available addon gets its own clean line item row.
     - quantity defaults to 1 automatically behind the scenes for future scalability."""
@@ -208,11 +235,17 @@ class SmoothieAddonItem(db.Model):
     # RELATIONSHIP
     ingredient = db.relationship("Ingredient")
 
+    def get_customer_charge(self) -> float:
+        unit_cost = self.ingredient.cost if self.ingredient and self.ingredient.cost else 0.0
+        return round(unit_cost * (self.ingredient_quantity or 1), 2)
+
+    def format_ticket_label(self) -> str:
+        return f"Add-on: {self.ingredient.name} (+${self.get_customer_charge():.2f})"
+
 
 # =========================================================================
 # 4. USER & SECURITY AUTHENTICATION SCHEMAS
 # =========================================================================
-
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
@@ -253,7 +286,7 @@ class Order(db.Model):
     payment_status = db.Column(db.Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
     service_status = db.Column(db.Enum(ServiceStatus), default=ServiceStatus.PENDING, nullable=False)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Establishes a relationship link to the line items easily
     order_items = db.relationship('OrderItem', backref='order', lazy=True)

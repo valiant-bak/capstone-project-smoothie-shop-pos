@@ -43,6 +43,30 @@ div.card.order-card .card-footer {
 {% endblock %}
 
 {% block content %}
+
+<!-- Compact Order Search & Status Report Filter Bar -->
+<form method="GET" action="{{ url_for('find_order') }}" class="row g-2 align-items-center mb-4 p-3 bg-light border rounded shadow-sm">
+    <div class="col-auto">
+        <label for="order_id" class="col-form-label fw-semibold">🔍 Find Order:</label>
+    </div>
+    <div class="col-sm-3">
+        <input type="number" min="1" class="form-control" id="order_id" name="order_id" placeholder="Order # (e.g., 1)">
+    </div>
+    <div class="col-sm-4">
+        <select class="form-select" id="status_filter" name="status_filter" aria-label="Filter orders by status">
+            <option value="">-- Select Status Filter (Optional) --</option>
+            <option value="pending_payment" {% if status_filter == 'pending_payment' %}selected{% endif %}>Pending Payment</option>
+            <option value="pending_served" {% if status_filter == 'pending_served' %}selected{% endif %}>Pending Served</option>
+            <option value="on_hold" {% if status_filter == 'on_hold' %}selected{% endif %}>On Hold</option>
+            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-success fw-semibold">Search</button>
+    </div>
+</form>
+
+
 <div class="container py-4">
     <!-- Payment Terminal Stats -->
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
@@ -119,6 +143,7 @@ div.card.order-card .card-footer {
                     <!-- Order Action Footer -->
                     <div class="card-footer mt-auto bg-light border-top pb-3 pt-3">
                         <form action="{{ url_for('serve_order', order_id=order.id) }}">
+                            <input type="hidden" name="source" value="pending_service">
                             <button type="submit"
                                 class="btn btn-warning w-100 fw-semibold py-2 shadow-sm fs-6 text-dark mb-0">
                                     Serve Order

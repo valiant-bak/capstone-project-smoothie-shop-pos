@@ -1,86 +1,199 @@
-<!-- order_review.html -->
+{% extends "base.html" %}
 
-{% extends 'base.html' %}
-
-{% block title %} 🥤Order Review | Oasis Smoothie Shop{% endblock %}
+{% block title %}🔍 Order Search & Receipt Lookup - Oasis Smoothie Shop{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-6">
-        <div class="card shadow border-0">
-            <div class="card-header bg-dark text-white p-3">
-                <h4 class="mb-0 fw-bold">🥤Smoothie Order Review</h4>
-            </div>
-            <div class="card-body bg-white p-4">
-
-                <!-- Loop through every smoothie package in the cart list -->
-                {% for item in items %}
-                <div class="card mb-4 border-light-subtle shadow-sm p-4 bg-white">
-                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                        <h5 class="fw-bold text-secondary mb-0">🥤 Item #{{ loop.index }}</h5>
-                        <span class="badge bg-success fs-6">Subtotal: ${{ "%.2f"|format(item.total) }}</span>
-                    </div>
-
-                    <!-- 1. Displaying Selected Base SmoothieDetails -->
-                    <div class="mb-3 border-bottom pb-3">
-                        <span class="text-muted small text-uppercase d-block fw-bold tracking-wider">Smoothie Selection</span>
-                        <h3 class="text-dark fw-bold mb-1">{{ item.smoothie.name }}</h3>
-                        <span class="text-secondary fw-semibold">${{ "%.2f"|format(item.smoothie.base_price) }}</span>
-                    </div>
-
-                    <!-- 2. Selected Modifications Recapping -->
-                    <div class="mb-2">
-                        <span class="text-muted small d-block fw-bold mb-2">Applied Upgrades & Customizations</span>
-                        <ul class="list-group list-group-flush">
-                            {% for mod in item.modifications %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
-                                <span class="text-dark fw-medium">✔️ {{ mod.name }}</span>
-                                <span class="text-muted small">+ ${{ "%.2f"|format(mod.price_change) }}</span>
-                            </li>
-                            {% else %}
-                            <li class="list-group-item px-0 bg-transparent text-muted small fst-italic">Standard formula recipe (No additional adjustments selected)</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-                {% endfor %}
-
-                <!-- Grand Total Component Display (placed below the loop container) -->
-                <div class="matrix-price-panel p-4 text-center bg-light rounded shadow-sm mb-4">
-                    <h3 class="text-dark fw-bold">ORDER GRAND TOTAL</h3>
-                    <h1 class="text-success fw-extrabold display-5">${{ "%.2f"|format(grand_total) }}</h1>
-                </div>
-                
-                <!-- SECURE TRANSACTION FORM ACTION (Handles all items in the cart) -->
-                <!-- <form action="{{ url_for('secure_payment') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/> -->
-
-                <!-- CRITICAL BLUEPRINT HACK: We inject hidden inputs tracking the checked mod array 
-                so when the user clicks submit, the exact list carries over into the POST request -->
-                {% for mod in selected_mods %}
-                <input type="hidden" name="modification_ids" value="{{ mod.id }}">
-                {% endfor %}
-
-                <div class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <a href="{{ url_for('view_cart') }}" class="btn btn-success w-100 fw-semibold align-items">
-                            👈 Back to Cart
-                        </a>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <!-- SECURE TRANSACTION FORM ACTION (Handles all items in the cart) -->
-                        <form action="{{ url_for('secure_payment') }}" method="POST">
-                            <!-- Include your security CSRF token here if using Flask-WTF -->
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/> 
-                            <!-- Renders if an Employee/Manager is processing the order directly -->
-                            <button type="submit" class="btn btn-success w-100 fw-bold shadow-sm">
-                                Secure Payment 👉
-                            </button> 
-                        </form>
-                    </div>  
-                </div>
-            </div>
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h1 class="h2 mb-0 text-dark">🔍 Order Search &amp; Status Lookup</h1>
+            <small class="text-muted">Search by Order ID for itemized receipt &amp; next-step actions, or filter orders by status</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('pending_payment_orders') if 'pending_payment_orders' in view_functions else '/orders/pending-payment' }}" class="btn btn-outline-secondary btn-sm">
+                💳 Payments
+            </a>
+            <a href="{{ url_for('pending_service_orders') if 'pending_service_orders' in view_functions else '/orders/pending-service' }}" class="btn btn-outline-secondary btn-sm">
+                🥤 Kitchen Queue
+            </a>
         </div>
     </div>
+
+    <!-- Search Form (GET Method - Pure Search & Status Report Filter, Does Not Alter DB) -->
+    <form method="GET" action="{{ url_for('find_order') }}" class="row g-2 align-items-end mb-4 p-3 bg-light border rounded shadow-sm">
+        <div class="col-md-4">
+            <label for="order_id" class="form-label fw-semibold">Search by Order ID</label>
+            <input
+                type="number"
+                min="1"
+                class="form-control"
+                id="order_id"
+                name="order_id"
+                placeholder="Enter Order # (e.g., 1)"
+                value="{{ raw_order_id }}"
+            >
+        </div>
+
+    <div class="col-sm-4">
+        <select class="form-select" id="status_filter" name="status_filter" aria-label="Filter orders by status">
+            <option value="">-- Select Status Filter (Optional) --</option>
+            <option value="pending_payment" {% if status_filter == 'pending_payment' %}selected{% endif %}>Pending Payment</option>
+            <option value="pending_service" {% if status_filter == 'pending_served' %}selected{% endif %}>Pending Served</option>
+            <option value="on_hold" {% if status_filter == 'on_hold' %}selected{% endif %}>On Hold</option>
+            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+        </select>
+    </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-success fw-semibold w-100">Search</button>
+            <a href="{{ url_for('find_order') }}" class="btn btn-outline-secondary">Clear</a>
+        </div>
+    </form>
+
+    <!-- Single Order Receipt + Payment/Service Status & Next-Step Action Buttons -->
+    {% if searched_order %}
+    <div class="card shadow-sm mb-4 border-success mx-auto" style="width: 50% !important; max-width: 50% !important;">
+
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-3 w-100">
+            <h4 class="mb-0" style="color: peachpuff;">Order #{{ searched_order.id }}</h4>
+            <span class="text-black p-2 rounded" style="background-color: peachpuff;">
+                {{ searched_order.created_at.strftime('%Y-%m-%d %I:%M %p') if searched_order.created_at else 'Just Now' }}
+            </span>
+        </div>
+
+        <div class="card-body">
+            <!-- Single wrapper div shields rows from base.html's .card-body flex rules -->
+            <div style="display: block; width: 100%; text-align: left;">
+            
+                <!-- Payment & Service Status Badges -->
+                <div class="d-flex flex-wrap gap-3 align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <strong>Payment Status:</strong>
+                        <span class="fs-6 p-2 rounded"   
+                            {% if searched_order.payment_status == PaymentStatus.PAID %}
+                                style="color:green;background-color:peachpuff;"
+                            {% else %}style="color:darkred;background-color:peachpuff;"{% endif %}>
+                            {{ searched_order.payment_status.value | upper }}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Service Status:</strong>
+                        <span class="fs-6 p-2 rounded"   
+                            {% if searched_order.service_status == ServiceStatus.SERVED %}
+                                style="color:green;background-color:peachpuff;"
+                            {% else %}style="color:darkred;background-color:peachpuff;"{% endif %}>
+                            {{ searched_order.service_status.value | upper }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Next-Step Action Bar (Collect Payment and/or Serve Order) -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center p-3 mb-4 rounded border bg-light gap-2">
+                    <div>
+                        <strong>Next Step:</strong>
+                        {% if searched_order.payment_status != PaymentStatus.PAID and searched_order.service_status != ServiceStatus.SERVED %}
+                            <span class="text-danger fw-semibold">Awaiting payment and kitchen service.</span>
+                        {% elif searched_order.payment_status != PaymentStatus.PAID %}
+                            <span class="text-danger fw-semibold">Served — awaiting customer payment.</span>
+                        {% elif searched_order.service_status != ServiceStatus.SERVED %}
+                            <span class="text-warning fw-semibold">Paid — ready to serve from kitchen.</span>
+                        {% else %}
+                            <span class="text-success fw-semibold">Order Complete (Paid &amp; Served).</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                    {% if searched_order.payment_status != PaymentStatus.PAID %}
+                    <form action="{{ url_for('process_payment', order_id=searched_order.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="source" value="find_order">
+                        <button type="submit" class="btn btn-warning fw-semibold text-dark shadow-sm">
+                            💵 Collect Payment (${{ "%.2f"|format(grand_total) }})
+                        </button>
+                    </form>
+                    {% elif searched_order.service_status != ServiceStatus.SERVED %}
+                    <form action="{{ url_for('serve_order', order_id=searched_order.id) }}">
+                        <button type="submit" class="btn btn-success fw-semibold shadow-sm">
+                            🥤 Serve Order
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Itemized Receipt from build_receipt_from_db -->
+            <h5 class="fw-semibold mb-3">Itemized Smoothie Receipt</h5>
+            {% for item in receipt_items %}
+            <div class="border rounded p-3 mb-2 bg-white text-start">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold font-monospace">#{{ item.smoothie_number }} {{ item.smoothie_name }}</span>
+                    <span class="fw-semibold font-monospace">${{ "%.2f"|format(item.smoothie_price) }}</span>
+                </div>
+                {% if item.recipe_ingredients %}
+                <div class="small text-muted text-start mt-1" style="max-width: 90%; text-align: left !important;">
+                    <strong>Ingredients:</strong> {{ item.recipe_ingredients | map(attribute='name') | join(', ') }}
+                </div>
+                {% endif %}
+                {% if item.addon_ingredients %}
+                <div class="small text-muted text-start mt-1" style="max-width: 90%; text-align: left !important;">
+                    <strong>Add-ons:</strong>
+                    {% for addon in item.addon_ingredients %}
+                        {{ addon.name }} (+${{ "%.2f"|format(addon.cost) }}){% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                <h4 class="mb-0 fw-semibold">Order Total:</h4>
+                <h4 class="mb-0 fw-semibold text-danger pe-2">${{ "%.2f"|format(grand_total) }}</h4>
+            </div>
+        </div>
+    
+    </div>
+    {% endif %}
+
+    <!-- Searchable Status Report Table -->
+    {% if matching_orders %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Filtered Orders Report ({{ matching_orders | length }} matching orders)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order #</th>
+                        <th>Time</th>
+                        <th>Total</th>
+                        <th>Payment Status</th>
+                        <th>Service Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ord in matching_orders %}
+                    <tr>
+                        <td class="fw-bold">#{{ ord.id }}</td>
+                        <td>{{ ord.created_at.strftime('%Y-%m-%d %I:%M %p') if ord.created_at else '' }}</td>
+                        <td class="fw-semibold">${{ "%.2f"|format(ord.total_price) }}</td>
+                        <td>{{ ord.payment_status.value | upper }}</td>
+                        <td>{{ ord.service_status.value | upper }}</td>
+                        <td>
+                            <a href="{{ url_for('find_order', order_id=ord.id) }}" class="btn btn-sm btn-outline-success">
+                                View Receipt &amp; Actions
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif search_performed and not searched_order %}
+    <div class="alert alert-info">No orders matched your search criteria.</div>
+    {% endif %}
 </div>
 {% endblock %}

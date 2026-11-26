@@ -1,3 +1,5 @@
+<!-- order_service_ticket.html -->
+
 {% extends "base.html" %}
 
 {% block title %}🥤Production Kitchen Queue - Oasis Smoothie Shop{% endblock %}
@@ -58,7 +60,6 @@
                                                     {% if not ing.add_ingredient %}
                                                     <div class="row align-content-between g-1 text-muted" style="border-bottom: 1px darkred solid;">
                                                         <h5 class=" col-9 text-start" style="color:red;">{{ ing.ingredient_name }}</h5>
-                                                        <!-- <h5 class=" col-2 text-end pe-3">NO</h5> -->
                                                     </div>
                                                     {% endif %}
                                                 {% endfor %}
@@ -72,8 +73,9 @@
                     </div>
                     <!-- Order Action Buttons -->
                     <div class="card-footer bg-light border-top pb-3 pt-3">  
-                        <form action="{{ url_for('serve_order', order_id=order_id) }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <form action="{{ url_for('serve_order', order_id=order_id, source=source) }}" method="POST">
+                            <!-- SECURITY token for the POST operation -->
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <button type="submit" class="btn btn-success w-100 fw-bold py-3 shadow-sm fs-5">
                                 PRESS HERE TO SERVE ORDER
                             </button> 

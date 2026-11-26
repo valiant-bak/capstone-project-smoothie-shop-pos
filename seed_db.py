@@ -11,10 +11,10 @@ def seed_initial_data(app):
     """Populates the database with initial workstation data if empty."""
     with app.app_context():
 
-        # IMPORTANT: COMMENT OUT THIS BLOCK TO PREVENT OVEWRITTIN THE DATA
-        # 1. FORCE RESET THE DATABASE ON STARTUP
+        # IMPORTANT: COMMENT OUT THIS BLOCK TO PREVENT OVEWRITTING THE DATA
+        # FORCE RESET THE DATABASE ON STARTUP
         # Clear previous table structures to prevent migration errors
-        
+        # =========================================================================
         # print("🧹 Cleaning out old tables to start with a fresh slate...")
         # db.drop_all()
         # db.create_all()
@@ -59,10 +59,10 @@ def seed_initial_data(app):
                 Ingredient(id='milk', name="Milk", portion=8, unit_type="fl oz", cost=0.5, current_stock=70, reorder_stock=20, minimum_stock=3, supplier_id=oasis_supply.id),
                 Ingredient(id='soy_milk', name="Soy Milk", portion=8, unit_type="fl oz", cost=1.0, current_stock=56, reorder_stock=8, minimum_stock=3, supplier_id=fruit_garden.id),            
                 Ingredient(id='frozen_yogurt', name="Frozen Yogurt", portion=8, unit_type="fl oz", cost=1.0, current_stock=150, reorder_stock=20, minimum_stock=5, supplier_id=healthy_options.id),
-                Ingredient(id='strawberries', name="Strawberries", portion=80, unit_type="grams", cost=0.5, current_stock=30, reorder_stock=10, minimum_stock=1, supplier_id=fruit_garden.id),
+                Ingredient(id='strawberries', name="Strawberries", portion=80, unit_type="grams", cost=1.0, current_stock=30, reorder_stock=10, minimum_stock=1, supplier_id=fruit_garden.id),
                 Ingredient(id='blueberries', name="Blueberries", portion=80, unit_type="grams", cost=0.5, current_stock=50, reorder_stock=20, minimum_stock=2, supplier_id=fruit_garden.id),
                 Ingredient(id='acai_berries', name="Acai Berries", portion=40, unit_type="grams", cost=1.0, current_stock=30, reorder_stock=10, minimum_stock=2, supplier_id=fruit_garden.id),
-                Ingredient(id='banana', name="Banana", portion=1, unit_type="unit", cost=0.20, current_stock=50, reorder_stock=10, minimum_stock=2, supplier_id=fruit_garden.id),
+                Ingredient(id='banana', name="Banana", portion=1, unit_type="unit", cost=0.50, current_stock=50, reorder_stock=10, minimum_stock=2, supplier_id=fruit_garden.id),
                 Ingredient(id='mango', name="Mango", portion=1, unit_type="unit", cost=1.0, current_stock=30, reorder_stock=10, minimum_stock=2, supplier_id=farmers_group.id),
                 Ingredient(id='pineapple', name="Pineapple", portion=1, unit_type="scoop", cost=1.0, current_stock=30, reorder_stock=10, minimum_stock=2, supplier_id=healthy_options.id),
                 Ingredient(id='whey_protein', name="Whey Protein", portion=1, unit_type="can", cost=1.0, current_stock=100, reorder_stock=10, minimum_stock=2, supplier_id=healthy_options.id),
@@ -205,6 +205,7 @@ def seed_initial_data(app):
 
             print("The 'Very Berry' Smoothie tables have already been populated. Skipping seeding loop.")
 
+
         # --- SMOOTHIE NAME: "Berry Banny" ---
         berry_banny_exists = Smoothie.query.filter_by(name="Berry Banny").first()
 
@@ -273,8 +274,6 @@ def seed_initial_data(app):
             print("The 'Berry Banny' Smoothie tables have already been populated. Skipping seeding loop.")
 
         
-        
-        
         # SECURITY: DATA INTEGRITY - Check whether the user table is completely empty
         if User.query.filter_by(username='manager1').first() is None: 
 
@@ -288,7 +287,7 @@ def seed_initial_data(app):
             admin1.set_password('admin123')  # Automatically gets converted to a secure hash
             admin2.set_password('admin456')
 
-            # FIX: Wrapped multi-object additions into an array list using add_all()
+            # Wrapped multi-object additions into an array list using add_all()
             db.session.add_all([admin1, admin2])
 
             # 2. Instantiate the standard staff profiles
@@ -303,9 +302,279 @@ def seed_initial_data(app):
             db.session.add_all([staff1, staff2])
             
             db.session.commit()
+            
             print("✅ Default employee profiles seeded securely into tracking tables!")
 
         else:
             print("User table already populated. Skipping seeding loop.")
 
-       
+
+        # --- SMOOTHIE NAME: "Mango Tango" ---
+        mango_tango_exists = Smoothie.query.filter_by(name="Mango Tango").first()
+
+        if not mango_tango_exists:
+            print("🍹 Seeding data for 'Mango Tango' Smoothie...")
+            mango_tango = Smoothie(
+                name="Mango Tango",
+                slogan="Tropical Rhythm in Every Sip!",
+                profit_margin=2.00
+            )
+            db.session.add(mango_tango)
+            db.session.flush()
+
+            # Section 1: Standard Core Recipe Items
+            db.session.add_all([
+                SmoothieRecipeItem(smoothie_id=mango_tango.id, ingredient_id='mango', ingredient_quantity=2),
+                SmoothieRecipeItem(smoothie_id=mango_tango.id, ingredient_id='pineapple', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=mango_tango.id, ingredient_id='banana', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=mango_tango.id, ingredient_id='whipped_cream', ingredient_quantity=1),
+            ])
+
+            # Section 2: Substitution Radio Options
+            db.session.add_all([
+                # Group 'starter' Radio Choices
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='starter', ingredient_id='frozen_yogurt', is_default=True),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='starter', ingredient_id='coconut_milk', is_default=False),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='starter', ingredient_id='soy_milk', is_default=False),
+
+                # Group 'flavor' Radio Choices
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='flavor', ingredient_id='vanilla_flavor', is_default=True),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='flavor', ingredient_id='strawberry_flavor', is_default=False),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='flavor', ingredient_id='chocolate_flavor', is_default=False),
+
+                # Group 'topping' Radio Choices
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='topping', ingredient_id='coconut_flakes', is_default=True),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='topping', ingredient_id='crunchy_oats', is_default=False),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='topping', ingredient_id='crunchy_caramel', is_default=False),
+
+                # Group 'sweetener' Radio Choices
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='sweetener', ingredient_id='sugar', is_default=True),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='sweetener', ingredient_id='splenda', is_default=False),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='sweetener', ingredient_id='no_sugar', is_default=False),
+
+                # Group 'ice' Radio Choices
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='ice', ingredient_id='crushed_ice', is_default=True),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='ice', ingredient_id='light_ice', is_default=False),
+                SmoothieSubItem(smoothie_id=mango_tango.id, group_name='ice', ingredient_id='no_ice', is_default=False),
+            ])
+
+            # Section 3: Premium Add-ons
+            db.session.add_all([
+                SmoothieAddonItem(smoothie_id=mango_tango.id, ingredient_id='strawberries'),
+                SmoothieAddonItem(smoothie_id=mango_tango.id, ingredient_id='whey_protein'),
+                SmoothieAddonItem(smoothie_id=mango_tango.id, ingredient_id='acai_berries'),
+            ])
+
+            mango_tango.calculate_and_save_price()
+            print(f"✅ Seeding Complete! '{mango_tango.name}' retail price calculated at: ${mango_tango.base_price}")
+            
+            db.session.commit()
+            
+            print("🎉 The 'Mango Tango' Smoothie tables have been successfully initialized!")
+
+        else:
+            print("The 'Mango Tango' Smoothie tables have already been populated. Skipping seeding loop.")
+
+
+        # --- SMOOTHIE NAME: "Choco Loco" ---
+        choco_loco_exists = Smoothie.query.filter_by(name="Choco Loco").first()
+
+        if not choco_loco_exists:
+            print("🍹 Seeding data for 'Choco Loco' Smoothie...")
+            choco_loco = Smoothie(
+                name="Choco Loco",
+                slogan="Pure Chocolate Madness!",
+                profit_margin=2.25
+            )
+            db.session.add(choco_loco)
+            db.session.flush()
+
+            # Section 1: Standard Core Recipe Items
+            db.session.add_all([
+                SmoothieRecipeItem(smoothie_id=choco_loco.id, ingredient_id='banana', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=choco_loco.id, ingredient_id='chocolate_topping', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=choco_loco.id, ingredient_id='choco_chips', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=choco_loco.id, ingredient_id='whipped_cream', ingredient_quantity=1),
+            ])
+
+            # Section 2: Substitution Radio Options
+            db.session.add_all([
+
+                # Group 'starter' Radio Choices
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='starter', ingredient_id='milk', is_default=True),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='starter', ingredient_id='frozen_yogurt', is_default=False),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='starter', ingredient_id='soy_milk', is_default=False),
+
+                # Group 'flavor' Radio Choices
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='flavor', ingredient_id='chocolate_flavor', is_default=True),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='flavor', ingredient_id='vanilla_flavor', is_default=False),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='flavor', ingredient_id='strawberry_flavor', is_default=False),
+
+                # Group 'topping' Radio Choices
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='topping', ingredient_id='crunchy_caramel', is_default=True),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='topping', ingredient_id='crunchy_oats', is_default=False),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='topping', ingredient_id='coconut_flakes', is_default=False),
+
+                # Group 'sweetener' Radio Choices
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='sweetener', ingredient_id='sugar', is_default=True),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='sweetener', ingredient_id='splenda', is_default=False),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='sweetener', ingredient_id='no_sugar', is_default=False),
+
+                # Group 'ice' Radio Choices
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='ice', ingredient_id='crushed_ice', is_default=True),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='ice', ingredient_id='light_ice', is_default=False),
+                SmoothieSubItem(smoothie_id=choco_loco.id, group_name='ice', ingredient_id='no_ice', is_default=False),
+            ])
+
+            # Section 3: Premium Add-ons
+            db.session.add_all([
+                SmoothieAddonItem(smoothie_id=choco_loco.id, ingredient_id='espresso_shot'),
+                SmoothieAddonItem(smoothie_id=choco_loco.id, ingredient_id='whey_protein'),
+                SmoothieAddonItem(smoothie_id=choco_loco.id, ingredient_id='strawberries'),
+                SmoothieAddonItem(smoothie_id=choco_loco.id, ingredient_id='cinammon'),
+            ])
+
+            choco_loco.calculate_and_save_price()
+            print(f"✅ Seeding Complete! '{choco_loco.name}' retail price calculated at: ${choco_loco.base_price}")
+            
+            db.session.commit()
+            
+            print("🎉 The 'Choco Loco' Smoothie tables have been successfully initialized!")
+
+        else:
+            print("The 'Choco Loco' Smoothie tables have already been populated. Skipping seeding loop.")
+
+
+        # --- SMOOTHIE NAME: "Tropical Oasis" ---
+        tropical_oasis_exists = Smoothie.query.filter_by(name="Tropical Oasis").first()
+
+        if not tropical_oasis_exists:
+            print("🍹 Seeding data for 'Tropical Oasis' Smoothie...")
+            tropical_oasis = Smoothie(
+                name="Tropical Oasis",
+                slogan="Your Island Escape in a Cup!",
+                profit_margin=2.50
+            )
+            db.session.add(tropical_oasis)
+            db.session.flush()
+
+            # Section 1: Standard Core Recipe Items
+            db.session.add_all([
+                SmoothieRecipeItem(smoothie_id=tropical_oasis.id, ingredient_id='pineapple', ingredient_quantity=2),
+                SmoothieRecipeItem(smoothie_id=tropical_oasis.id, ingredient_id='mango', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=tropical_oasis.id, ingredient_id='strawberries', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=tropical_oasis.id, ingredient_id='coconut_flakes', ingredient_quantity=1),
+            ])
+
+            # Section 2: Substitution Radio Options
+            db.session.add_all([
+                # Group 'starter' Radio Choices
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='starter', ingredient_id='coconut_milk', is_default=True),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='starter', ingredient_id='frozen_yogurt', is_default=False),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='starter', ingredient_id='soy_milk', is_default=False),
+
+                # Group 'flavor' Radio Choices
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='flavor', ingredient_id='vanilla_flavor', is_default=True),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='flavor', ingredient_id='strawberry_flavor', is_default=False),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='flavor', ingredient_id='chocolate_flavor', is_default=False),
+                
+                # Group 'topping' Radio Choices
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='topping', ingredient_id='crunchy_oats', is_default=True),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='topping', ingredient_id='crunchy_caramel', is_default=False),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='topping', ingredient_id='choco_chips', is_default=False),
+                
+                # Group 'sweetener' Radio Choices
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='sweetener', ingredient_id='sugar', is_default=True),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='sweetener', ingredient_id='splenda', is_default=False),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='sweetener', ingredient_id='no_sugar', is_default=False),
+                
+                # Group 'ice' Radio Choices
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='ice', ingredient_id='crushed_ice', is_default=True),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='ice', ingredient_id='light_ice', is_default=False),
+                SmoothieSubItem(smoothie_id=tropical_oasis.id, group_name='ice', ingredient_id='no_ice', is_default=False),
+            ])
+
+            # Section 3: Premium Add-ons
+            db.session.add_all([
+                SmoothieAddonItem(smoothie_id=tropical_oasis.id, ingredient_id='banana'),
+                SmoothieAddonItem(smoothie_id=tropical_oasis.id, ingredient_id='blueberries'),
+                SmoothieAddonItem(smoothie_id=tropical_oasis.id, ingredient_id='whey_protein'),
+                SmoothieAddonItem(smoothie_id=tropical_oasis.id, ingredient_id='whipped_cream'),
+            ])
+
+            tropical_oasis.calculate_and_save_price()
+            print(f"✅ Seeding Complete! '{tropical_oasis.name}' retail price calculated at: ${tropical_oasis.base_price}")
+            
+            db.session.commit()
+            
+            print("🎉 The 'Tropical Oasis' Smoothie tables have been successfully initialized!")
+        
+        else:
+            print("The 'Tropical Oasis' Smoothie tables have already been populated. Skipping seeding loop.")
+
+        # --- SMOOTHIE NAME: "Coffee Taffy" ---
+        coffee_taffy_exists = Smoothie.query.filter_by(name="Coffee Taffy").first()
+
+        if not coffee_taffy_exists:
+            print("🍹 Seeding data for 'Coffee Taffy' Smoothie...")
+            coffee_taffy = Smoothie(
+                name="Coffee Taffy",
+                slogan="Sweet and Fluffy!",
+                profit_margin=2.25
+            )
+            db.session.add(coffee_taffy)
+            db.session.flush()
+
+            # Section 1: Standard Core Recipe Items
+            db.session.add_all([
+                SmoothieRecipeItem(smoothie_id=coffee_taffy.id, ingredient_id='iced_coffee', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=coffee_taffy.id, ingredient_id='espresso_shot', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=coffee_taffy.id, ingredient_id='banana', ingredient_quantity=1),
+                SmoothieRecipeItem(smoothie_id=coffee_taffy.id, ingredient_id='whipped_cream', ingredient_quantity=1),
+            ])
+
+            # Section 2: Substitution Radio Options
+            db.session.add_all([
+                # Group 'starter' Radio Choices
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='starter', ingredient_id='coffee_creamer', is_default=True),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='starter', ingredient_id='milk', is_default=False),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='starter', ingredient_id='soy_milk', is_default=False),
+
+                # Group 'flavor' Radio Choices
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='flavor', ingredient_id='vanilla_flavor', is_default=True),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='flavor', ingredient_id='chocolate_flavor', is_default=False),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='flavor', ingredient_id='strawberry_flavor', is_default=False),
+
+                # Group 'topping' Radio Choices
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='topping', ingredient_id='crunchy_caramel', is_default=True),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='topping', ingredient_id='choco_chips', is_default=False),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='topping', ingredient_id='crunchy_oats', is_default=False),
+
+                # Group 'sweetener' Radio Choices
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='sweetener', ingredient_id='sugar', is_default=True),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='sweetener', ingredient_id='splenda', is_default=False),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='sweetener', ingredient_id='no_sugar', is_default=False),
+
+                # Group 'ice' Radio Choices
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='ice', ingredient_id='crushed_ice', is_default=True),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='ice', ingredient_id='light_ice', is_default=False),
+                SmoothieSubItem(smoothie_id=coffee_taffy.id, group_name='ice', ingredient_id='no_ice', is_default=False),
+            ])
+
+            # Section 3: Premium Add-ons
+            db.session.add_all([
+                SmoothieAddonItem(smoothie_id=coffee_taffy.id, ingredient_id='caramel_topping'),
+                SmoothieAddonItem(smoothie_id=coffee_taffy.id, ingredient_id='whey_protein'),
+                SmoothieAddonItem(smoothie_id=coffee_taffy.id, ingredient_id='cinammon'),
+                SmoothieAddonItem(smoothie_id=coffee_taffy.id, ingredient_id='choco_chips'),
+            ])
+
+            coffee_taffy.calculate_and_save_price()
+            print(f"✅ Seeding Complete! '{coffee_taffy.name}' retail price calculated at: ${coffee_taffy.base_price}")
+
+            db.session.commit()
+
+            print("🎉 The 'Coffee Taffy' Smoothie tables have been successfully initialized!")
+
+        else:
+            print("The 'Coffee Taffy' Smoothie tables have already been populated. Skipping seeding loop.")
